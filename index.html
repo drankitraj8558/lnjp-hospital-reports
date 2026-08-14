@@ -390,7 +390,7 @@
             <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Window:</span>
             <div class="chip active" onclick="setWindowFilter('ALL', this)">All</div>
             <div class="chip" onclick="setWindowFilter('Window 1', this)">Window 1 (CBC)</div>
-            <div class="chip" onclick="setWindowFilter('Window 2', this)">Window 2 (Immunoassay)</div>
+            <div class="chip" onclick="setWindowFilter('Window 2', this)">Window 2 (LFT/KFT/PT-INR)</div>
           </div>
           
           <div class="filter-chips" id="deptChips">
@@ -434,8 +434,8 @@
           <div class="form-group">
             <label>Target Window:</label>
             <select id="uploadWindowType">
-              <option value="Window 1">Window 1 (CBC / Hematology)</option>
-              <option value="Window 2">Window 2 (Immunoassay / Markers)</option>
+              <option value="Window 1">Window 1 (CBC)</option>
+              <option value="Window 2">Window 2 (LFT/KFT/PT-INR)</option>
             </select>
           </div>
           <div class="upload-zone" onclick="document.getElementById('fileChooser').click()">
