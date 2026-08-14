@@ -15,6 +15,54 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
+    /* Multi-select styles */
+.result-card.selected {
+  border: 2px solid var(--primary);
+  background: var(--primary-light);
+}
+.card-checkbox {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  z-index: 5;
+}
+.result-card {
+  position: relative;
+}
+.bulk-bar {
+  position: sticky;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  background: var(--primary);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  z-index: 40;
+  margin-top: 20px;
+}
+.bulk-bar.active {
+  display: flex;
+}
+.bulk-bar button {
+  background: white;
+  color: var(--primary);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
     :root {
       --primary: #0284c7;
       --primary-hover: #0369a1;
@@ -366,6 +414,16 @@
             <button class="theme-toggle" onclick="fetchDatabase(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
           <div class="results-grid" id="resultsGrid"></div>
+          <!-- Bulk Share Bar -->
+<div class="bulk-bar" id="bulkBar">
+  <span id="selectedCount">0 selected</span>
+  <div style="display:flex; gap:10px;">
+    <button onclick="clearSelection()">Clear</button>
+    <button onclick="shareSelectedWhatsApp()">
+      <i class="fa-brands fa-whatsapp"></i> Share Selected
+    </button>
+  </div>
+</div>
         </div>
       </div>
 
@@ -447,7 +505,8 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9qjLCPhAXlJwDMas5ydr7_WfryVV78EUxr3mo3pb2-DW6sxRoH95FQUlWqfFyhdS6ng/exec";
    
     const _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-   
+    
+   let selectedReports = new Map(); // key = unique id, value = report data
     let currentUser = null;
     let currentProfile = null;
     let rawRecords = [];
@@ -812,97 +871,111 @@
     }
 
     function applyFilters() {
-      const query = document.getElementById('liveSearchInput').value.toLowerCase().trim();
-      const grid = document.getElementById('resultsGrid');
-      const countLabel = document.getElementById('resultsCount');
-     
-      const filtered = rawRecords.filter(row => {
-        const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
-       
-        const matchQuery = !query || 
-          (name || '').toString().toLowerCase().includes(query) || 
-          (crNo || '').toString().toLowerCase().includes(query) || 
-          (dept || '').toString().toLowerCase().includes(query);
-         
-        const matchWindow = (activeWindowFilter === 'ALL') || (windowType === activeWindowFilter);
-       
-        const matchDept = (activeDeptFilter === 'ALL') || 
-          (dept || '').toString().toLowerCase().includes(activeDeptFilter.toLowerCase());
-       
-        let matchDate = true;
-        if (activeDateFilter !== 'ALL') {
-          try {
-            const d = new Date(timestamp);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            const recordDate = `${yyyy}-${mm}-${dd}`;
-            matchDate = (recordDate === activeDateFilter);
-          } catch (e) {
-            matchDate = false;
-          }
-        }
-       
-        return matchQuery && matchWindow && matchDept && matchDate;
-      });
-     
-      countLabel.innerText = `Showing ${filtered.length} report(s) (last 5 days)`;
-      grid.innerHTML = "";
-     
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No reports found in the last 5 days.</div>`;
-        return;
+  const query = document.getElementById('liveSearchInput').value.toLowerCase().trim();
+  const grid = document.getElementById('resultsGrid');
+  const countLabel = document.getElementById('resultsCount');
+
+  const filtered = rawRecords.filter(row => {
+    const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
+
+    const matchQuery = !query ||
+      (name || '').toString().toLowerCase().includes(query) ||
+      (crNo || '').toString().toLowerCase().includes(query) ||
+      (dept || '').toString().toLowerCase().includes(query);
+
+    const matchWindow = (activeWindowFilter === 'ALL') || (windowType === activeWindowFilter);
+
+    const matchDept = (activeDeptFilter === 'ALL') ||
+      (dept || '').toString().toLowerCase().includes(activeDeptFilter.toLowerCase());
+
+    let matchDate = true;
+    if (activeDateFilter !== 'ALL') {
+      try {
+        const d = new Date(timestamp);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const recordDate = `${yyyy}-${mm}-${dd}`;
+        matchDate = (recordDate === activeDateFilter);
+      } catch (e) {
+        matchDate = false;
       }
-     
-      // Newest first
-      filtered.reverse().forEach(row => {
-        const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
-        const badgeClass = windowType === 'Window 1' ? 'badge-w1' : 'badge-w2';
-        const directUrl = getDirectImageUrl(imgUrl);
-       
-        let dateStr = '';
-        try {
-          const d = new Date(timestamp);
-          dateStr = d.toLocaleString('en-IN', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-          });
-        } catch(e) { dateStr = timestamp; }
-       
-        const card = document.createElement('div');
-        card.className = 'result-card';
-        card.innerHTML = `
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <strong>${name || 'Unknown Patient'}</strong>
-              <span class="badge ${badgeClass}">${windowType}</span>
-            </div>
-            <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
-              CR: <span style="color:var(--text-main); font-weight:600;">${crNo || 'N/A'}</span>
-            </div>
-            <div style="font-size: 13px; color: var(--text-muted);">
-              Dept: <span style="color:var(--text-main); font-weight:600;">${dept || 'N/A'}</span>
-            </div>
-            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-              <i class="fa-regular fa-clock"></i> ${dateStr}
-            </div>
-          </div>
-          <img src="${directUrl}" class="img-preview" 
-               onclick="openModal('${directUrl}')"
-               onerror="this.src='https://via.placeholder.com/300x140?text=Image+Not+Available'; this.style.objectFit='contain';"
-               loading="lazy">
-          <div style="display: flex; gap: 8px;">
-            <button class="btn-action btn-view" onclick="openModal('${directUrl}')">
-              <i class="fa-solid fa-expand"></i> View
-            </button>
-            <button class="btn-action btn-wa" onclick="shareWhatsApp('${(name||'').replace(/'/g,"\\'")}', '${crNo}', '${dept}', '${imgUrl}')">
-              <i class="fa-brands fa-whatsapp"></i> Share
-            </button>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
     }
+
+    return matchQuery && matchWindow && matchDept && matchDate;
+  });
+
+  countLabel.innerText = `Showing ${filtered.length} report(s) (last 5 days)`;
+  grid.innerHTML = "";
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No reports found in the last 5 days.</div>`;
+    updateBulkBar();
+    return;
+  }
+
+  // Newest first
+  filtered.reverse().forEach((row, index) => {
+    const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
+    const badgeClass = windowType === 'Window 1' ? 'badge-w1' : 'badge-w2';
+    const directUrl = getDirectImageUrl(imgUrl);
+
+    // Unique key for selection
+    const uniqueId = `${timestamp}_${crNo}_${name}`.replace(/\s+/g, '_');
+
+    let dateStr = '';
+    try {
+      const d = new Date(timestamp);
+      dateStr = d.toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch(e) { dateStr = timestamp; }
+
+    const isSelected = selectedReports.has(uniqueId);
+
+    const card = document.createElement('div');
+    card.className = 'result-card' + (isSelected ? ' selected' : '');
+    card.dataset.id = uniqueId;
+
+    card.innerHTML = `
+      <input type="checkbox" class="card-checkbox" 
+             ${isSelected ? 'checked' : ''} 
+             onchange="toggleSelect('${uniqueId}', this.checked, this)">
+      
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 26px;">
+          <strong>${name || 'Unknown Patient'}</strong>
+          <span class="badge ${badgeClass}">${windowType}</span>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; padding-left: 26px;">
+          CR: <span style="color:var(--text-main); font-weight:600;">${crNo || 'N/A'}</span>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted); padding-left: 26px;">
+          Dept: <span style="color:var(--text-main); font-weight:600;">${dept || 'N/A'}</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; padding-left: 26px;">
+          <i class="fa-regular fa-clock"></i> ${dateStr}
+        </div>
+      </div>
+      <img src="${directUrl}" class="img-preview"
+           onclick="openModal('${directUrl}')"
+           onerror="this.src='https://via.placeholder.com/300x140?text=Image+Not+Available'; this.style.objectFit='contain';"
+           loading="lazy">
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-action btn-view" onclick="openModal('${directUrl}')">
+          <i class="fa-solid fa-expand"></i> View
+        </button>
+        <button class="btn-action btn-wa" onclick="shareWhatsApp('${(name||'').replace(/'/g,"\\'")}', '${crNo}', '${dept}', '${imgUrl}')">
+          <i class="fa-brands fa-whatsapp"></i> Share
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  updateBulkBar();
+}
 
     function openModal(url) {
       const modal = document.getElementById('imageModal');
@@ -993,6 +1066,73 @@
       btn.disabled = false;
       fetchDatabase();
     }
+    function toggleSelect(id, isChecked, checkbox) {
+  const card = checkbox.closest('.result-card');
+  
+  if (isChecked) {
+    // Find the original row data
+    const row = rawRecords.find(r => {
+      const key = `${r[0]}_${r[3]}_${r[2]}`.replace(/\s+/g, '_');
+      return key === id;
+    });
+    if (row) {
+      selectedReports.set(id, {
+        name: row[2],
+        crNo: row[3],
+        dept: row[4],
+        imgUrl: row[5],
+        windowType: row[1]
+      });
+      card.classList.add('selected');
+    }
+  } else {
+    selectedReports.delete(id);
+    card.classList.remove('selected');
+  }
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const countEl = document.getElementById('selectedCount');
+  const count = selectedReports.size;
+  
+  countEl.innerText = `${count} selected`;
+  
+  if (count > 0) {
+    bar.classList.add('active');
+  } else {
+    bar.classList.remove('active');
+  }
+}
+
+function clearSelection() {
+  selectedReports.clear();
+  document.querySelectorAll('.card-checkbox').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+  updateBulkBar();
+}
+
+function shareSelectedWhatsApp() {
+  if (selectedReports.size === 0) return;
+
+  let message = `*LNJP Hospital – Lab Reports (${selectedReports.size})*\n\n`;
+
+  let i = 1;
+  selectedReports.forEach((report) => {
+    message += `*${i}. ${report.name || 'Unknown'}*\n`;
+    message += `🔢 CR: ${report.crNo || 'N/A'}\n`;
+    message += `🏥 Dept: ${report.dept || 'N/A'}\n`;
+    message += `🪟 ${report.windowType}\n`;
+    message += `📄 ${report.imgUrl}\n\n`;
+    i++;
+  });
+
+  message += `_Shared from LNJP LabHub_`;
+
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank');
+}
   </script>
 </body>
 </html>
