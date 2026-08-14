@@ -746,26 +746,37 @@
 
     // ========== DATA FETCH + 5-DAY FILTER ==========
     async function fetchDatabase(manual = false) {
-      const countLabel = document.getElementById('resultsCount');
-      if (manual) countLabel.innerText = "Syncing from Google Sheet...";
-      try {
-        const response = await fetch(SCRIPT_URL);
-        const allRecords = await response.json();
-       
-        // Keep only last 5 days
-        const fiveDaysAgo = new Date();
-        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-       
-        rawRecords = allRecords.filter(row => {
-          const ts = new Date(row[0]);
-          return !isNaN(ts.getTime()) && ts >= fiveDaysAgo;
-        });
-       
-        applyFilters();
-      } catch (err) {
-        countLabel.innerText = "Failed to load records.";
-      }
+  const countLabel = document.getElementById('resultsCount');
+  if (manual) countLabel.innerText = "Syncing from Google Sheet...";
+  
+  try {
+    // Add a cache-buster so browser doesn't use old failed response
+    const response = await fetch(SCRIPT_URL + "?t=" + Date.now(), {
+      method: "GET",
+      redirect: "follow"
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} - Script may need redeployment`);
     }
+
+    const allRecords = await response.json();
+
+    // Keep only last 5 days
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+    rawRecords = allRecords.filter(row => {
+      const ts = new Date(row[0]);
+      return !isNaN(ts.getTime()) && ts >= fiveDaysAgo;
+    });
+
+    applyFilters();
+  } catch (err) {
+    console.error("Fetch error:", err);
+    countLabel.innerText = "Failed to load records. Please redeploy Apps Script (see console).";
+  }
+}
 
     function setWindowFilter(win, el) {
       activeWindowFilter = win;
