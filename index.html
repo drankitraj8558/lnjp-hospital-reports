@@ -46,7 +46,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; transition: background-color 0.2s ease; }
     body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; }
 
-    /* Top Navbar */
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--surface-border);
@@ -89,7 +88,6 @@
 
     .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
 
-    /* Auth Screens (Login / Onboarding / Pending) */
     .auth-card {
       max-width: 450px;
       margin: 60px auto;
@@ -121,7 +119,6 @@
     }
     .btn-google:hover { background: #f9fafb; }
 
-    /* Form Fields */
     .form-group { text-align: left; margin-bottom: 15px; }
     .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
     .form-group input, .form-group select {
@@ -135,7 +132,6 @@
       outline: none;
     }
 
-    /* Tabs */
     .tab-bar {
       display: flex;
       background: var(--surface);
@@ -165,7 +161,6 @@
       color: #ffffff;
     }
 
-    /* Panels */
     .panel { display: none; }
     .panel.active { display: block; }
 
@@ -187,7 +182,6 @@
       color: var(--primary);
     }
 
-    /* Search & Filter UI */
     .search-input {
       width: 100%;
       padding: 14px 14px 14px 44px;
@@ -212,7 +206,6 @@
     }
     .chip.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
 
-    /* Results Grid */
     .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 15px; }
     .result-card {
       background: var(--surface);
@@ -230,7 +223,6 @@
     .badge-w2 { background: #fef3c7; color: #92400e; }
     .img-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid var(--surface-border); cursor: pointer; }
 
-    /* Buttons */
     .btn-submit {
       width: 100%;
       background: var(--primary);
@@ -250,7 +242,6 @@
     .btn-view { background: var(--primary-light); color: var(--primary); }
     .btn-wa { background: #dcfce7; color: #15803d; }
 
-    /* Admin Table */
     .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
     .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--surface-border); }
     .admin-table th { background: var(--bg); color: var(--text-muted); font-weight: 600; }
@@ -259,14 +250,12 @@
     .btn-approve-editor { background: #dcfce7; color: #16a34a; }
     .btn-reject { background: #fee2e2; color: #dc2626; }
 
-    /* Upload Zone */
     .upload-zone { border: 2px dashed var(--primary); background: var(--bg); border-radius: var(--radius); padding: 30px 20px; text-align: center; cursor: pointer; margin-bottom: 15px; }
     .preview-tray { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; }
     .thumb-box { position: relative; width: 75px; height: 75px; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
     .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
     .thumb-remove { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; }
 
-    /* Lightbox Modal */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 15px; }
     .modal.active { display: flex; }
     .modal-content { max-width: 90vw; max-height: 85vh; display: flex; flex-direction: column; align-items: center; position: relative; }
@@ -278,7 +267,6 @@
 </head>
 <body>
 
-  <!-- Top Navigation -->
   <header>
     <div class="nav-container">
       <div class="brand">
@@ -295,25 +283,25 @@
 
   <div class="container">
 
-    <!-- SCREEN 1: LOGIN (Unauthenticated) -->
-    <div id="view-login" class="auth-card" style="display: none;">
+    <!-- SCREEN 1: LOGIN (Visible by default) -->
+    <div id="view-login" class="auth-card">
       <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"></i>
       <h2 class="auth-title">Staff Portal Login</h2>
-      <p class="auth-desc">Sign in with your institutional or verified Google account to access clinical laboratory records.</p>
+      <p class="auth-desc">Sign in with your verified Google account to access clinical laboratory records.</p>
       <button class="btn-google" onclick="loginWithGoogle()">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18" alt="Google">
         Continue with Google
       </button>
     </div>
 
-    <!-- SCREEN 2: PROFILE ONBOARDING (First Login) -->
+    <!-- SCREEN 2: PROFILE ONBOARDING -->
     <div id="view-onboarding" class="auth-card" style="display: none;">
       <h2 class="auth-title">Complete Your Profile</h2>
       <p class="auth-desc">Please provide your hospital posting details for account verification.</p>
       
       <div class="form-group">
         <label>Full Name:</label>
-        <input type="text" id="regFullName" placeholder="Dr. Ankit Raj">
+        <input type="text" id="regFullName" placeholder="Dr. Name">
       </div>
 
       <div class="form-group">
@@ -359,8 +347,6 @@
 
     <!-- SCREEN 4: MAIN APP (Approved Users) -->
     <div id="view-main" style="display: none;">
-      
-      <!-- Tab Navigation -->
       <div class="tab-bar">
         <button class="tab-btn active" id="tabBtnSearch" onclick="switchTab('search')">
           <i class="fa-solid fa-magnifying-glass"></i> Search Directory
@@ -469,15 +455,11 @@
   </div>
 
   <script>
-    // ==========================================
-    // ⚙️ CONFIGURATION: PASTE KEYS HERE
-    // ==========================================
     const SUPABASE_URL = "https://leytpfrbrvrsihowgcwg.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxleXRwZnJicnZyc2lob3dnY3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgyMzAsImV4cCI6MjEwMjI4NDIzMH0.rkR4Ndf7eyhwOKcWdPcfVV4dsaIaNpLvIUpFf63_W9E";
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9qjLCPhAXlJwDMas5ydr7_WfryVV78EUxr3mo3pb2-DW6sxRoH95FQUlWqfFyhdS6ng/exec";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    let supabase = null;
     let currentUser = null;
     let currentProfile = null;
     let rawRecords = [];
@@ -489,66 +471,97 @@
 
     // --- INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', async () => {
-      checkUserSession();
+      try {
+        if (window.supabase && window.supabase.createClient) {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+          console.error("Supabase client library failed to load from CDN.");
+          return;
+        }
+
+        // Listen for session changes (Handles Google OAuth redirects cleanly)
+        supabase.auth.onAuthStateChange((event, session) => {
+          checkUserSession();
+        });
+
+        checkUserSession();
+      } catch (err) {
+        console.error("Init Error:", err);
+        showView('view-login');
+      }
     });
 
     // --- AUTHENTICATION FLOW ---
     async function checkUserSession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
+      try {
+        if (!supabase) return;
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          showView('view-login');
+          return;
+        }
+
+        currentUser = session.user;
+        
+        // Fetch user profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Profile query error:", profileError);
+        }
+
+        if (!profile) {
+          showView('view-onboarding');
+          return;
+        }
+
+        currentProfile = profile;
+
+        if (profile.status === 'pending') {
+          showView('view-pending');
+          return;
+        }
+
+        if (profile.status === 'rejected') {
+          document.getElementById('pendingMsg').innerText = "Your access request was not approved. Contact Administrator.";
+          showView('view-pending');
+          return;
+        }
+
+        setupMainApp();
+      } catch (e) {
+        console.error("checkUserSession failed:", e);
         showView('view-login');
-        return;
       }
-
-      currentUser = session.user;
-      
-      // Fetch user profile from database
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .maybeSingle();
-
-      if (!profile) {
-        // First login -> prompt for profile info
-        showView('view-onboarding');
-        return;
-      }
-
-      currentProfile = profile;
-
-      if (profile.status === 'pending') {
-        showView('view-pending');
-        return;
-      }
-
-      if (profile.status === 'rejected') {
-        document.getElementById('pendingMsg').innerText = "Your access request was not approved. Contact Administrator.";
-        showView('view-pending');
-        return;
-      }
-
-      // User is APPROVED
-      setupMainApp();
     }
 
     function showView(viewId) {
       ['view-login', 'view-onboarding', 'view-pending', 'view-main'].forEach(id => {
-        document.getElementById(id).style.display = (id === viewId) ? 'block' : 'none';
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === viewId) ? 'block' : 'none';
       });
-      document.getElementById('btnLogout').style.display = (viewId === 'view-login') ? 'none' : 'inline-flex';
+      const logoutBtn = document.getElementById('btnLogout');
+      if (logoutBtn) logoutBtn.style.display = (viewId === 'view-login') ? 'none' : 'inline-flex';
     }
 
     async function loginWithGoogle() {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.href }
-      });
+      try {
+        await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin + window.location.pathname }
+        });
+      } catch (err) {
+        alert("Login error: " + err.message);
+      }
     }
 
     async function logout() {
-      await supabase.auth.signOut();
+      if (supabase) await supabase.auth.signOut();
       window.location.reload();
     }
 
@@ -578,23 +591,28 @@
       showView('view-main');
       
       const navInfo = document.getElementById('navUserInfo');
-      navInfo.style.display = 'inline';
-      navInfo.innerText = `${currentProfile.full_name} (${currentProfile.role.toUpperCase()})`;
+      if (navInfo) {
+        navInfo.style.display = 'inline';
+        navInfo.innerText = `${currentProfile.full_name || 'Staff'} (${(currentProfile.role || 'viewer').toUpperCase()})`;
+      }
 
-      // Role Permissions
       if (currentProfile.role === 'admin') {
-        document.getElementById('tabBtnAdmin').style.display = 'flex';
+        const adminTab = document.getElementById('tabBtnAdmin');
+        if (adminTab) adminTab.style.display = 'flex';
         loadAdminUsers();
       }
 
       if (currentProfile.role === 'viewer') {
-        document.getElementById('uploadDeskCard').innerHTML = `
-          <div style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
-            <i class="fa-solid fa-lock" style="font-size: 2.5rem; margin-bottom: 12px;"></i>
-            <h3>Upload Restricted</h3>
-            <p>You have Viewer access. Contact Dr. Ankit to grant you Editor role for uploads.</p>
-          </div>
-        `;
+        const uploadCard = document.getElementById('uploadDeskCard');
+        if (uploadCard) {
+          uploadCard.innerHTML = `
+            <div style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
+              <i class="fa-solid fa-lock" style="font-size: 2.5rem; margin-bottom: 12px;"></i>
+              <h3>Upload Restricted</h3>
+              <p>You have Viewer access. Contact the administrator to grant you Editor role for uploads.</p>
+            </div>
+          `;
+        }
       }
 
       fetchDatabase();
