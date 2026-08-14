@@ -761,23 +761,65 @@
       el.classList.add('active');
       applyFilters();
     }
-
+<!-- DATE FILTER -->
+<div class="filter-chips" style="margin-top: 12px; align-items: center;">
+  <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Date:</span>
+  <div class="chip active" id="dateChipAll" onclick="setDateFilter('ALL', this)">All dates</div>
+  <input type="date" id="datePicker" 
+         style="padding: 6px 10px; border-radius: 8px; border: 1px solid var(--surface-border); 
+                background: var(--bg); color: var(--text-main); font-size: 13px; font-weight: 600;"
+         onchange="setDateFilter(this.value, null)" />
+  <button class="chip" onclick="clearDateFilter()" style="margin-left: 4px;">Clear</button>
+</div>
     function applyFilters() {
       const query = document.getElementById('liveSearchInput').value.toLowerCase().trim();
       const grid = document.getElementById('resultsGrid');
       const countLabel = document.getElementById('resultsCount');
       
-      const filtered = rawRecords.filter(row => {
-        const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
-        const matchQuery = !query || 
-          (name || '').toString().toLowerCase().includes(query) || 
-          (crNo || '').toString().toLowerCase().includes(query) || 
-          (dept || '').toString().toLowerCase().includes(query);
-        const matchWindow = (activeWindowFilter === 'ALL') || (windowType === activeWindowFilter);
-        const matchDept = (activeDeptFilter === 'ALL') || 
-          (dept || '').toString().toLowerCase().includes(activeDeptFilter.toLowerCase());
-        return matchQuery && matchWindow && matchDept;
-      });
+    const filtered = rawRecords.filter(row => {
+  const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
+  
+  const matchQuery = !query || 
+    (name || '').toString().toLowerCase().includes(query) || 
+    (crNo || '').toString().toLowerCase().includes(query) || 
+    (dept || '').toString().toLowerCase().includes(query);
+    
+  const matchWindow = (activeWindowFilter === 'ALL') || (windowType === activeWindowFilter);
+  
+  const matchDept = (activeDeptFilter === 'ALL') || 
+    (dept || '').toString().toLowerCase().includes(activeDeptFilter.toLowerCase());
+  
+  // ===== DATE FILTER =====
+  function setDateFilter(dateValue, el) {
+  activeDateFilter = dateValue;
+  
+  // Update chip UI
+  document.querySelectorAll('#dateChipAll').forEach(c => c.classList.remove('active'));
+  if (dateValue === 'ALL') {
+    document.getElementById('dateChipAll').classList.add('active');
+    document.getElementById('datePicker').value = '';
+  } else {
+    document.getElementById('dateChipAll').classList.remove('active');
+  }
+  
+  applyFilters();
+}
+
+function clearDateFilter() {
+  setDateFilter('ALL', null);
+}    
+  let matchDate = true;
+  if (activeDateFilter !== 'ALL') {
+    try {
+      const recordDate = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD
+      matchDate = (recordDate === activeDateFilter);
+    } catch (e) {
+      matchDate = false;
+    }
+  }
+  
+  return matchQuery && matchWindow && matchDept && matchDate;
+});
       
       countLabel.innerText = `Showing ${filtered.length} report(s) (last 5 days)`;
       grid.innerHTML = "";
@@ -927,6 +969,7 @@
       btn.disabled = false;
       fetchDatabase();
     }
+    let activeDateFilter = "ALL";   // "ALL" or "YYYY-MM-DD"
   </script>
 </body>
 </html>
