@@ -283,7 +283,7 @@
 
   <div class="container">
 
-    <!-- SCREEN 1: LOGIN (Visible by default) -->
+    <!-- SCREEN 1: LOGIN -->
     <div id="view-login" class="auth-card">
       <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"></i>
       <h2 class="auth-title">Staff Portal Login</h2>
@@ -294,7 +294,7 @@
       </button>
     </div>
 
-    <!-- SCREEN 2: PROFILE ONBOARDING -->
+    <!-- SCREEN 2: ONBOARDING -->
     <div id="view-onboarding" class="auth-card" style="display: none;">
       <h2 class="auth-title">Complete Your Profile</h2>
       <p class="auth-desc">Please provide your hospital posting details for account verification.</p>
@@ -335,7 +335,7 @@
       </button>
     </div>
 
-    <!-- SCREEN 3: PENDING APPROVAL -->
+    <!-- SCREEN 3: PENDING -->
     <div id="view-pending" class="auth-card" style="display: none;">
       <i class="fa-solid fa-clock-rotate-left" style="font-size: 3rem; color: var(--warning); margin-bottom: 15px;"></i>
       <h2 class="auth-title">Approval Pending</h2>
@@ -345,7 +345,7 @@
       </button>
     </div>
 
-    <!-- SCREEN 4: MAIN APP (Approved Users) -->
+    <!-- SCREEN 4: MAIN APP -->
     <div id="view-main" style="display: none;">
       <div class="tab-bar">
         <button class="tab-btn active" id="tabBtnSearch" onclick="switchTab('search')">
@@ -390,7 +390,7 @@
         </div>
       </div>
 
-      <!-- TAB 2: Upload Desk -->
+      <!-- TAB 2: Upload -->
       <div id="tab-upload" class="panel">
         <div class="card" id="uploadDeskCard">
           <div class="card-title"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Lab Sheets</div>
@@ -417,7 +417,7 @@
         </div>
       </div>
 
-      <!-- TAB 3: Admin Approval Desk -->
+      <!-- TAB 3: Admin -->
       <div id="tab-admin" class="panel">
         <div class="card">
           <div class="card-title"><i class="fa-solid fa-users-gear"></i> User Approvals & Role Management</div>
@@ -440,7 +440,7 @@
     </div>
   </div>
 
-  <!-- In-App Image Lightbox Modal -->
+  <!-- Lightbox Modal -->
   <div class="modal" id="imageModal">
     <div class="modal-content">
       <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
@@ -459,7 +459,9 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxleXRwZnJicnZyc2lob3dnY3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgyMzAsImV4cCI6MjEwMjI4NDIzMH0.rkR4Ndf7eyhwOKcWdPcfVV4dsaIaNpLvIUpFf63_W9E";
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9qjLCPhAXlJwDMas5ydr7_WfryVV78EUxr3mo3pb2-DW6sxRoH95FQUlWqfFyhdS6ng/exec";
 
-    let supabase = null;
+    // Initialized client without global name collisions
+    const _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let currentUser = null;
     let currentProfile = null;
     let rawRecords = [];
@@ -469,33 +471,16 @@
     let currentZoom = 1;
     let currentRotation = 0;
 
-    // --- INITIALIZATION ---
-    window.addEventListener('DOMContentLoaded', async () => {
-      try {
-        if (window.supabase && window.supabase.createClient) {
-          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } else {
-          console.error("Supabase client library failed to load from CDN.");
-          return;
-        }
-
-        // Listen for session changes (Handles Google OAuth redirects cleanly)
-        supabase.auth.onAuthStateChange((event, session) => {
-          checkUserSession();
-        });
-
+    window.addEventListener('DOMContentLoaded', () => {
+      _supabaseClient.auth.onAuthStateChange((event, session) => {
         checkUserSession();
-      } catch (err) {
-        console.error("Init Error:", err);
-        showView('view-login');
-      }
+      });
+      checkUserSession();
     });
 
-    // --- AUTHENTICATION FLOW ---
     async function checkUserSession() {
       try {
-        if (!supabase) return;
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await _supabaseClient.auth.getSession();
         
         if (sessionError || !session) {
           showView('view-login');
@@ -504,16 +489,11 @@
 
         currentUser = session.user;
         
-        // Fetch user profile
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await _supabaseClient
           .from('profiles')
           .select('*')
           .eq('id', currentUser.id)
           .maybeSingle();
-
-        if (profileError) {
-          console.error("Profile query error:", profileError);
-        }
 
         if (!profile) {
           showView('view-onboarding');
@@ -535,7 +515,7 @@
 
         setupMainApp();
       } catch (e) {
-        console.error("checkUserSession failed:", e);
+        console.error("Session check error:", e);
         showView('view-login');
       }
     }
@@ -551,9 +531,9 @@
 
     async function loginWithGoogle() {
       try {
-        await supabase.auth.signInWithOAuth({
+        await _supabaseClient.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: window.location.origin + window.location.pathname }
+          options: { redirectTo: window.location.href.split('#')[0] }
         });
       } catch (err) {
         alert("Login error: " + err.message);
@@ -561,7 +541,7 @@
     }
 
     async function logout() {
-      if (supabase) await supabase.auth.signOut();
+      await _supabaseClient.auth.signOut();
       window.location.reload();
     }
 
@@ -572,7 +552,7 @@
 
       if (!fullName) return alert("Please enter your Full Name");
 
-      const { error } = await supabase.from('profiles').upsert({
+      const { error } = await _supabaseClient.from('profiles').upsert({
         id: currentUser.id,
         email: currentUser.email,
         full_name: fullName,
@@ -586,7 +566,6 @@
       else checkUserSession();
     }
 
-    // --- SETUP MAIN APPLICATION ---
     function setupMainApp() {
       showView('view-main');
       
@@ -618,10 +597,9 @@
       fetchDatabase();
     }
 
-    // --- ADMIN USER MANAGEMENT DESK ---
     async function loadAdminUsers() {
       const tbody = document.getElementById('adminUserTableBody');
-      const { data: users, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      const { data: users, error } = await _supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
 
       if (error || !users) {
         tbody.innerHTML = `<tr><td colspan="4">Error loading users.</td></tr>`;
@@ -654,12 +632,11 @@
     }
 
     async function updateUserRole(userId, status, role) {
-      const { error } = await supabase.from('profiles').update({ status, role }).eq('id', userId);
+      const { error } = await _supabaseClient.from('profiles').update({ status, role }).eq('id', userId);
       if (error) alert("Action failed: " + error.message);
       else loadAdminUsers();
     }
 
-    // --- TAB SWITCHER ---
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -676,14 +653,12 @@
       }
     }
 
-    // --- DARK MODE ---
     function toggleTheme() {
       const isDark = document.body.getAttribute('data-theme') === 'dark';
       document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
       document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
     }
 
-    // --- FETCH & FILTER REPORTS ---
     async function fetchDatabase(manual = false) {
       const countLabel = document.getElementById('resultsCount');
       if (manual) countLabel.innerText = "Syncing from Google Sheet...";
@@ -757,7 +732,6 @@
       });
     }
 
-    // --- LIGHTBOX ---
     function openModal(url) {
       const modal = document.getElementById('imageModal');
       document.getElementById('modalImage').src = url;
@@ -774,7 +748,6 @@
       window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     }
 
-    // --- UPLOAD PIPELINE ---
     function compressImage(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
