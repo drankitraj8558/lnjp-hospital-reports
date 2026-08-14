@@ -10,8 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <style>
     :root {
       --primary: #0284c7;
@@ -277,6 +279,7 @@
         Continue with Google
       </button>
     </div>
+    
     <!-- SCREEN 2: ONBOARDING -->
     <div id="view-onboarding" class="auth-card" style="display: none;">
       <h2 class="auth-title">Complete Your Profile</h2>
@@ -305,6 +308,7 @@
         <i class="fa-solid fa-paper-plane"></i> Submit for Approval
       </button>
     </div>
+
     <!-- SCREEN 3: PENDING -->
     <div id="view-pending" class="auth-card" style="display: none;">
       <i class="fa-solid fa-clock-rotate-left" style="font-size: 3rem; color: var(--warning); margin-bottom: 15px;"></i>
@@ -314,6 +318,7 @@
         <i class="fa-solid fa-rotate"></i> Check Status
       </button>
     </div>
+
     <!-- SCREEN 4: MAIN APP -->
     <div id="view-main" style="display: none;">
       <div class="tab-bar">
@@ -327,6 +332,7 @@
           <i class="fa-solid fa-user-shield"></i> 🛡️ Admin Panel
         </button>
       </div>
+
       <!-- TAB 1: Search -->
       <div id="tab-search" class="panel active">
         <div class="card">
@@ -338,10 +344,23 @@
             <div class="chip" onclick="setWindowFilter('Window 1', this)">Window 1 (CBC)</div>
             <div class="chip" onclick="setWindowFilter('Window 2', this)">Window 2 (Immunoassay)</div>
           </div>
+          
           <div class="filter-chips" id="deptChips">
             <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Dept:</span>
-            <!-- Dynamic chips will be injected here -->
+            <!-- Dynamic chips injected here -->
           </div>
+
+          <!-- Date Filter (Properly placed in HTML) -->
+          <div class="filter-chips" style="margin-top: 12px; align-items: center;">
+            <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Date:</span>
+            <div class="chip active" id="dateChipAll" onclick="setDateFilter('ALL', this)">All dates</div>
+            <input type="date" id="datePicker" 
+                   style="padding: 6px 10px; border-radius: 8px; border: 1px solid var(--surface-border); 
+                          background: var(--bg); color: var(--text-main); font-size: 13px; font-weight: 600;"
+                   onchange="setDateFilter(this.value, null)" />
+            <button class="chip" onclick="clearDateFilter()" style="margin-left: 4px;">Clear</button>
+          </div>
+
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
             <span id="resultsCount" style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Loading...</span>
             <button class="theme-toggle" onclick="fetchDatabase(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
@@ -349,6 +368,7 @@
           <div class="results-grid" id="resultsGrid"></div>
         </div>
       </div>
+
       <!-- TAB 2: Upload -->
       <div id="tab-upload" class="panel">
         <div class="card" id="uploadDeskCard">
@@ -372,6 +392,7 @@
           <p id="uploadStatusText" style="text-align: center; font-size: 13px; font-weight: 600; margin-top: 10px;"></p>
         </div>
       </div>
+
       <!-- TAB 3: Admin -->
       <div id="tab-admin" class="panel">
         <div class="card">
@@ -395,16 +416,17 @@
         <div class="card" style="margin-top: 20px;">
           <div class="card-title"><i class="fa-solid fa-building"></i> Manage Departments</div>
           <div class="dept-manage-row">
-            <input type="text" id="newDeptName" placeholder="Enter new department name (e.g. Ortho EM)">
+            <input type="text" id="newDeptName" class="search-input" style="margin-bottom:0;" placeholder="Enter new department name (e.g. Ortho EM)">
             <button class="btn-submit" style="width: auto; padding: 10px 16px;" onclick="addDepartment()">
               <i class="fa-solid fa-plus"></i> Add
             </button>
           </div>
-          <div id="deptListContainer"></div>
+          <div id="deptListContainer" style="margin-top: 12px;"></div>
         </div>
       </div>
     </div>
   </div>
+
   <!-- Lightbox Modal -->
   <div class="modal" id="imageModal">
     <div class="modal-content">
@@ -418,24 +440,25 @@
       </div>
     </div>
   </div>
+
   <script>
     const SUPABASE_URL = "https://leytpfrbrvrsihowgcwg.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxleXRwZnJicnZyc2lob3dnY3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgyMzAsImV4cCI6MjEwMjI4NDIzMH0.rkR4Ndf7eyhwOKcWdPcfVV4dsaIaNpLvIUpFf63_W9E";
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9qjLCPhAXlJwDMas5ydr7_WfryVV78EUxr3mo3pb2-DW6sxRoH95FQUlWqfFyhdS6ng/exec";
-    
+   
     const _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
+   
     let currentUser = null;
     let currentProfile = null;
     let rawRecords = [];
     let selectedFiles = [];
     let activeWindowFilter = "ALL";
     let activeDeptFilter = "ALL";
+    let activeDateFilter = "ALL"; // "ALL" or "YYYY-MM-DD"
     let currentZoom = 1;
     let currentRotation = 0;
-    let departmentList = []; // Dynamic list
+    let departmentList = [];
 
-    // Default fallback departments
     const DEFAULT_DEPTS = ["Med EM", "Sx EM", "PICU", "CLR", "W14", "Ortho EM", "ICU", "Other"];
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -448,10 +471,8 @@
     // ========== IMAGE HELPER ==========
     function getDirectImageUrl(url) {
       if (!url) return '';
-      // Extract file ID from any Drive link format
       const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
       if (match && match[1]) {
-        // lh3 is the most reliable for embedding
         return `https://lh3.googleusercontent.com/d/${match[1]}`;
       }
       return url;
@@ -464,7 +485,7 @@
           .from('departments')
           .select('name')
           .order('name');
-        
+       
         if (error || !data || data.length === 0) {
           departmentList = [...DEFAULT_DEPTS];
         } else {
@@ -481,10 +502,10 @@
     function renderDeptChips() {
       const container = document.getElementById('deptChips');
       if (!container) return;
-      
+     
       let html = `<span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Dept:</span>
                   <div class="chip ${activeDeptFilter === 'ALL' ? 'active' : ''}" onclick="setDeptFilter('ALL', this)">All</div>`;
-      
+     
       departmentList.forEach(dept => {
         html += `<div class="chip ${activeDeptFilter === dept ? 'active' : ''}" onclick="setDeptFilter('${dept}', this)">${dept}</div>`;
       });
@@ -500,12 +521,12 @@
     function renderDeptAdminList() {
       const container = document.getElementById('deptListContainer');
       if (!container) return;
-      
+     
       if (departmentList.length === 0) {
         container.innerHTML = '<p style="color: var(--text-muted);">No departments yet.</p>';
         return;
       }
-      
+     
       container.innerHTML = departmentList.map(dept => `
         <div class="dept-list-item">
           <span>${dept}</span>
@@ -520,28 +541,26 @@
       const input = document.getElementById('newDeptName');
       const name = (input.value || '').trim();
       if (!name) return alert('Enter a department name');
-      
+     
       if (departmentList.includes(name)) return alert('Department already exists');
-      
+     
       try {
         const { error } = await _supabaseClient.from('departments').insert({ name });
         if (error) throw error;
         input.value = '';
         await loadDepartments();
       } catch (e) {
-        // Fallback: just add locally (will be lost on refresh if table missing)
         departmentList.push(name);
         departmentList.sort();
         renderDeptChips();
         renderRegDepartmentSelect();
         renderDeptAdminList();
-        alert('Added locally (create the departments table in Supabase for permanent storage)');
       }
     }
 
     async function deleteDepartment(name) {
       if (!confirm(`Delete department "${name}"?`)) return;
-      
+     
       try {
         const { error } = await _supabaseClient.from('departments').delete().eq('name', name);
         if (error) throw error;
@@ -570,9 +589,9 @@
           .select('*')
           .eq('id', currentUser.id)
           .maybeSingle();
-          
+         
         if (!profile) {
-          await loadDepartments(); // so registration select works
+          await loadDepartments();
           showView('view-onboarding');
           return;
         }
@@ -732,16 +751,16 @@
       try {
         const response = await fetch(SCRIPT_URL);
         const allRecords = await response.json();
-        
+       
         // Keep only last 5 days
         const fiveDaysAgo = new Date();
         fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-        
+       
         rawRecords = allRecords.filter(row => {
           const ts = new Date(row[0]);
           return !isNaN(ts.getTime()) && ts >= fiveDaysAgo;
         });
-        
+       
         applyFilters();
       } catch (err) {
         countLabel.innerText = "Failed to load records.";
@@ -761,81 +780,75 @@
       el.classList.add('active');
       applyFilters();
     }
-<!-- DATE FILTER -->
-<div class="filter-chips" style="margin-top: 12px; align-items: center;">
-  <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Date:</span>
-  <div class="chip active" id="dateChipAll" onclick="setDateFilter('ALL', this)">All dates</div>
-  <input type="date" id="datePicker" 
-         style="padding: 6px 10px; border-radius: 8px; border: 1px solid var(--surface-border); 
-                background: var(--bg); color: var(--text-main); font-size: 13px; font-weight: 600;"
-         onchange="setDateFilter(this.value, null)" />
-  <button class="chip" onclick="clearDateFilter()" style="margin-left: 4px;">Clear</button>
-</div>
+
+    // ========== DATE FILTER FUNCTIONS ==========
+    function setDateFilter(dateValue, el) {
+      activeDateFilter = dateValue;
+      
+      document.querySelectorAll('#dateChipAll').forEach(c => c.classList.remove('active'));
+      if (dateValue === 'ALL') {
+        document.getElementById('dateChipAll').classList.add('active');
+        document.getElementById('datePicker').value = '';
+      } else {
+        document.getElementById('dateChipAll').classList.remove('active');
+      }
+      
+      applyFilters();
+    }
+
+    function clearDateFilter() {
+      setDateFilter('ALL', null);
+    }
+
     function applyFilters() {
       const query = document.getElementById('liveSearchInput').value.toLowerCase().trim();
       const grid = document.getElementById('resultsGrid');
       const countLabel = document.getElementById('resultsCount');
-      
-    const filtered = rawRecords.filter(row => {
-  const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
-  
-  const matchQuery = !query || 
-    (name || '').toString().toLowerCase().includes(query) || 
-    (crNo || '').toString().toLowerCase().includes(query) || 
-    (dept || '').toString().toLowerCase().includes(query);
-    
-  const matchWindow = (activeWindowFilter === 'ALL') || (windowType === activeWindowFilter);
-  
-  const matchDept = (activeDeptFilter === 'ALL') || 
-    (dept || '').toString().toLowerCase().includes(activeDeptFilter.toLowerCase());
-  
-  // ===== DATE FILTER =====
-  function setDateFilter(dateValue, el) {
-  activeDateFilter = dateValue;
-  
-  // Update chip UI
-  document.querySelectorAll('#dateChipAll').forEach(c => c.classList.remove('active'));
-  if (dateValue === 'ALL') {
-    document.getElementById('dateChipAll').classList.add('active');
-    document.getElementById('datePicker').value = '';
-  } else {
-    document.getElementById('dateChipAll').classList.remove('active');
-  }
-  
-  applyFilters();
-}
-
-function clearDateFilter() {
-  setDateFilter('ALL', null);
-}    
-  let matchDate = true;
-  if (activeDateFilter !== 'ALL') {
-    try {
-      const recordDate = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD
-      matchDate = (recordDate === activeDateFilter);
-    } catch (e) {
-      matchDate = false;
-    }
-  }
-  
-  return matchQuery && matchWindow && matchDept && matchDate;
-});
-      
+     
+      const filtered = rawRecords.filter(row => {
+        const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
+       
+        const matchQuery = !query || 
+          (name || '').toString().toLowerCase().includes(query) || 
+          (crNo || '').toString().toLowerCase().includes(query) || 
+          (dept || '').toString().toLowerCase().includes(query);
+         
+        const matchWindow = (activeWindowFilter === 'ALL') || (windowType === activeWindowFilter);
+       
+        const matchDept = (activeDeptFilter === 'ALL') || 
+          (dept || '').toString().toLowerCase().includes(activeDeptFilter.toLowerCase());
+       
+        let matchDate = true;
+        if (activeDateFilter !== 'ALL') {
+          try {
+            const d = new Date(timestamp);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const recordDate = `${yyyy}-${mm}-${dd}`;
+            matchDate = (recordDate === activeDateFilter);
+          } catch (e) {
+            matchDate = false;
+          }
+        }
+       
+        return matchQuery && matchWindow && matchDept && matchDate;
+      });
+     
       countLabel.innerText = `Showing ${filtered.length} report(s) (last 5 days)`;
       grid.innerHTML = "";
-      
+     
       if (filtered.length === 0) {
         grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No reports found in the last 5 days.</div>`;
         return;
       }
-      
+     
       // Newest first
       filtered.reverse().forEach(row => {
         const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
         const badgeClass = windowType === 'Window 1' ? 'badge-w1' : 'badge-w2';
         const directUrl = getDirectImageUrl(imgUrl);
-        
-        // Format date nicely
+       
         let dateStr = '';
         try {
           const d = new Date(timestamp);
@@ -844,7 +857,7 @@ function clearDateFilter() {
             hour: '2-digit', minute: '2-digit'
           });
         } catch(e) { dateStr = timestamp; }
-        
+       
         const card = document.createElement('div');
         card.className = 'result-card';
         card.innerHTML = `
@@ -969,7 +982,6 @@ function clearDateFilter() {
       btn.disabled = false;
       fetchDatabase();
     }
-    let activeDateFilter = "ALL";   // "ALL" or "YYYY-MM-DD"
   </script>
 </body>
 </html>
