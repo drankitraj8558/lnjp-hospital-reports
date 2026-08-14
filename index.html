@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LNJP Hospital Report Search Portal</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #eef2f5; color: #333; }
+    .container { max-width: 700px; margin: 0 auto; }
+    .card { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    h2, h3 { color: #0056b3; margin-top: 0; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input, select, button { padding: 12px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; }
+    button { background: #0056b3; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button:hover { background: #004085; }
+    .result-item { background: #f8f9fa; border-left: 4px solid #0056b3; padding: 15px; margin-top: 15px; border-radius: 4px; }
+    img { max-width: 100%; border-radius: 6px; margin-top: 10px; border: 1px solid #ddd; }
+    #uploadStatus { font-weight: bold; color: #0056b3; margin-top: 10px; white-space: pre-line; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>LNJP Hospital Report Search Portal</h2>
+
+    <!-- Upload Section -->
+    <div class="card">
+      <h3>📤 Upload Report Photos</h3>
+      <label>Select Category / Window:</label>
+      <select id="windowType">
+        <option value="Window 1">Window 1 (CBC / Hematology)</option>
+        <option value="Window 2">Window 2 (Immunoassay / Markers)</option>
+      </select>
+      
+      <!-- Live Camera Capture Input -->
+      <label>Option A: Capture Live Photo (Mobile Camera)</label>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment">
+
+      <!-- Multi-file Upload Input -->
+      <label>Option B: Select from gallery (Up to 30 photos)</label>
+      <input type="file" id="batchInput" accept="image/*" multiple>
+
+      <button onclick="uploadImages()">Upload & Process with AI</button>
+      <div id="uploadStatus"></div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="card">
+      <h3>🔍 Search Patient Reports</h3>
+      <input type="text" id="searchInput" placeholder="Enter Name, CR No., or Dept (e.g. Med EM, PICU)...">
+      <button onclick="searchReports()">Search</button>
+      <div id="searchResults"></div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9qjLCPhAXlJwDMas5ydr7_WfryVV78EUxr3mo3pb2-DW6sxRoH95FQUlWqfFyhdS6ng/exec";
+
+    async function uploadImages() {
+      const cameraInput = document.getElementById('cameraInput');
+      const batchInput = document.getElementById('batchInput');
+      const windowType = document.getElementById('windowType').value;
+      const status = document.getElementById('uploadStatus');
+
+      let files = Array.from(cameraInput.files).concat(Array.from(batchInput.files));
+
+      if (files.length === 0) {
+        alert("Please select or capture at least one photo!");
+        return;
+      }
+
+      if (files.length > 30) {
+        alert("Please select a maximum of 30 photos at a time.");
+        return;
+      }
+
+      status.style.color = "#0056b3";
+      status.innerText = `⏳ Processing ${files.length} photo(s)... Please wait.`;
+
+      let successCount = 0;
+
+      for (let i = 0; i < files.length; i++) {
+        status.innerText = `⏳ AI processing photo ${i + 1} of ${files.length}...`;
+        
+        try {
+          const base64Data = await readFileAsDataURL(files[i]);
+          
+          const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({ image: base64Data, window: windowType })
+          });
+          
+          const data = await response.json();
+          if (data.status === "success") {
+            successCount++;
+          } else {
+            console.error(`Error processing file ${i + 1}:`, data.message);
+          }
+        } catch (err) {
+          console.error(`Upload failed on file ${i + 1}:`, err);
+        }
+      }
+
+      status.style.color = "#28a745";
+      status.innerText = `✅ Processing complete! Successfully logged ${successCount} out of ${files.length} sheets.`;
+      
+      cameraInput.value = "";
+      batchInput.value = "";
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function searchReports() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('searchResults');
+      
+      if (!query) {
+        resultsDiv.innerHTML = "<p>Please enter a search term.</p>";
+        return;
+      }
+
+      resultsDiv.innerHTML = "<p>Searching database...</p>";
+
+      fetch(SCRIPT_URL)
+      .then(res => res.json())
+      .then(rows => {
+        resultsDiv.innerHTML = "";
+        let count = 0;
+
+        rows.forEach(row => {
+          const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
+          const match = name.toString().toLowerCase().includes(query) ||
+                        crNo.toString().toLowerCase().includes(query) ||
+                        dept.toString().toLowerCase().includes(query);
+
+          if (match) {
+            count++;
+            resultsDiv.innerHTML += `
+              <div class="result-item">
+                <p><strong>Window:</strong> ${windowType} | <strong>Dept:</strong> ${dept}</p>
+                <p><strong>Name:</strong> ${name} | <strong>CR No:</strong> ${crNo}</p>
+                <a href="${imgUrl}" target="_blank">
+                  <img src="${imgUrl}" alt="Report Photo">
+                  <br>👉 Open Full Image in Drive
+                </a>
+              </div>
+            `;
+          }
+        });
+
+        if (count === 0) {
+          resultsDiv.innerHTML = "<p>No matching patient records found.</p>";
+        }
+      })
+      .catch(err => {
+        resultsDiv.innerHTML = "<p>Error querying database. Ensure your Google Sheet contains logs.</p>";
+      });
+    }
+  </script>
+</body>
+</html>
