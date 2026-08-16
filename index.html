@@ -562,7 +562,7 @@
 
     function getDirectImageUrl(url) {
       if (!url) return '';
-      const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+      const match = String(url).match(/\/d\/([a-zA-Z0-9_-]+)/) || String(url).match(/id=([a-zA-Z0-9_-]+)/);
       if (match && match[1]) {
         return `https://lh3.googleusercontent.com/d/${match[1]}`;
       }
@@ -729,7 +729,7 @@
       const navInfo = document.getElementById('navUserInfo');
       if (navInfo) {
         navInfo.style.display = 'inline';
-        navInfo.innerText = `${currentProfile.full_name || 'Staff'} (${(currentProfile.role || 'viewer').toUpperCase()})`;
+        navInfo.innerText = `${currentProfile.full_name || 'Staff'} (${String(currentProfile.role || 'viewer').toUpperCase()})`;
       }
       if (currentProfile.role === 'admin') {
         const adminTab = document.getElementById('tabBtnAdmin');
@@ -810,7 +810,7 @@
       const countLabel = document.getElementById('resultsCount');
       if (manual) countLabel.innerText = "Syncing from Google Sheet...";
       try {
-        const response = await fetch(SCRIPT_URL);
+        const response = await fetch(SCRIPT_URL + "?t=" + Date.now());
         const data = await response.json();
         
         if (Array.isArray(data)) {
@@ -837,7 +837,7 @@
     function setWindowFilter(win, el) {
       activeWindowFilter = win;
       document.querySelectorAll('#windowChips .chip').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
+      if (el) el.classList.add('active');
       applyFilters();
     }
 
@@ -865,22 +865,22 @@
     }
 
     function applyFilters() {
-      const query = (document.getElementById('liveSearchInput').value || '').toLowerCase().trim();
+      const query = String(document.getElementById('liveSearchInput').value || '').toLowerCase().trim();
       const grid = document.getElementById('resultsGrid');
       const countLabel = document.getElementById('resultsCount');
 
       const filtered = rawRecords.filter(r => {
-        const nameMatch = (r.name || '').toLowerCase().includes(query);
-        const crMatch = (r.crNo || '').toString().toLowerCase().includes(query);
-        const deptFieldMatch = (r.dept || '').toLowerCase().includes(query);
-        const matchQuery = !query || nameMatch || crMatch || deptFieldMatch;
+        const nameStr = String(r.name || '').toLowerCase();
+        const crStr = String(r.crNo || '').toLowerCase();
+        const deptStr = String(r.dept || '').toLowerCase();
+        const matchQuery = !query || nameStr.includes(query) || crStr.includes(query) || deptStr.includes(query);
 
-        const matchWindow = (activeWindowFilter === 'ALL') || (r.windowType === activeWindowFilter);
+        const matchWindow = (activeWindowFilter === 'ALL') || (String(r.windowType || '') === activeWindowFilter);
         
         let matchDept = true;
         if (activeDeptFilter !== 'ALL') {
-          matchDept = (r.dept || '').toLowerCase().trim() === activeDeptFilter.toLowerCase().trim() ||
-                      (r.dept || '').toLowerCase().includes(activeDeptFilter.toLowerCase());
+          const filterDept = String(activeDeptFilter).toLowerCase().trim();
+          matchDept = deptStr.trim() === filterDept || deptStr.includes(filterDept);
         }
 
         let matchDate = true;
@@ -909,7 +909,6 @@
 
       const isEditorOrAdmin = currentProfile && (currentProfile.role === 'admin' || currentProfile.role === 'editor');
 
-      // Create a copy before reversing to keep rawRecords intact
       [...filtered].reverse().forEach(r => {
         const badgeClass = r.windowType === 'Window 1' ? 'badge-w1' : 'badge-w2';
         const directUrl = getDirectImageUrl(r.imgUrl);
@@ -976,7 +975,7 @@
           <div style="display: flex; gap: 6px;">
             <button class="btn-action btn-view" onclick="openModal('${directUrl}')"><i class="fa-solid fa-expand"></i> View</button>
             ${isEditorOrAdmin ? `<button class="btn-action btn-edit" onclick="openEditModal(${r.rowIndex})"><i class="fa-solid fa-pen"></i> Edit</button>` : ''}
-            <button class="btn-action btn-wa" onclick="shareWhatsApp('${(r.name||'').replace(/'/g,"\\'")}', '${r.crNo}', '${r.dept}', '${r.imgUrl}')"><i class="fa-brands fa-whatsapp"></i> Share</button>
+            <button class="btn-action btn-wa" onclick="shareWhatsApp('${String(r.name||'').replace(/'/g,"\\'")}', '${r.crNo}', '${r.dept}', '${r.imgUrl}')"><i class="fa-brands fa-whatsapp"></i> Share</button>
           </div>
         `;
         grid.appendChild(card);
