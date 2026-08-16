@@ -15,54 +15,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
-    /* Multi-select styles */
-.result-card.selected {
-  border: 2px solid var(--primary);
-  background: var(--primary-light);
-}
-.card-checkbox {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  z-index: 5;
-}
-.result-card {
-  position: relative;
-}
-.bulk-bar {
-  position: sticky;
-  bottom: 20px;
-  left: 0;
-  right: 0;
-  background: var(--primary);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 12px;
-  display: none;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  z-index: 40;
-  margin-top: 20px;
-}
-.bulk-bar.active {
-  display: flex;
-}
-.bulk-bar button {
-  background: white;
-  color: var(--primary);
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
     :root {
       --primary: #0284c7;
       --primary-hover: #0369a1;
@@ -91,6 +43,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; transition: background-color 0.2s ease; }
     body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; }
+    
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--surface-border);
@@ -116,7 +69,6 @@
       color: var(--primary);
     }
     .user-actions { display: flex; align-items: center; gap: 10px; }
-   
     .theme-toggle, .btn-logout {
       background: var(--bg);
       border: 1px solid var(--surface-border);
@@ -131,6 +83,7 @@
       gap: 6px;
     }
     .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+    
     .auth-card {
       max-width: 450px;
       margin: 60px auto;
@@ -143,7 +96,6 @@
     }
     .auth-title { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
     .auth-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; line-height: 1.4; }
-   
     .btn-google {
       width: 100%;
       background: #ffffff;
@@ -160,7 +112,7 @@
       gap: 10px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    .btn-google:hover { background: #f9fafb; }
+
     .form-group { text-align: left; margin-bottom: 15px; }
     .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
     .form-group input, .form-group select {
@@ -173,6 +125,7 @@
       font-size: 14px;
       outline: none;
     }
+
     .tab-bar {
       display: flex;
       background: var(--surface);
@@ -197,10 +150,8 @@
       justify-content: center;
       gap: 8px;
     }
-    .tab-btn.active {
-      background: var(--primary);
-      color: #ffffff;
-    }
+    .tab-btn.active { background: var(--primary); color: #ffffff; }
+
     .panel { display: none; }
     .panel.active { display: block; }
     .card {
@@ -243,7 +194,8 @@
       cursor: pointer;
     }
     .chip.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
-    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 15px; }
+
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; margin-top: 15px; }
     .result-card {
       background: var(--surface);
       border: 1px solid var(--surface-border);
@@ -254,11 +206,32 @@
       flex-direction: column;
       justify-content: space-between;
       gap: 10px;
+      position: relative;
     }
+    .result-card.selected { border: 2px solid var(--primary); background: var(--primary-light); }
+    .card-checkbox { position: absolute; top: 12px; left: 12px; width: 18px; height: 18px; cursor: pointer; z-index: 5; }
+
     .badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
     .badge-w1 { background: #dbeafe; color: #1e40af; }
     .badge-w2 { background: #fef3c7; color: #92400e; }
     .img-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid var(--surface-border); cursor: pointer; background: var(--bg); }
+    
+    /* Lab Values Box */
+    .lab-box {
+      background: var(--bg);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+    .lab-title { font-weight: 700; color: var(--primary); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; font-size: 11px; text-transform: uppercase; }
+    .lab-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+    .lab-cell { background: var(--surface); padding: 4px 6px; border-radius: 6px; border: 1px solid var(--surface-border); }
+    .lab-cell span { display: block; font-size: 10px; color: var(--text-muted); font-weight: 600; }
+    .lab-cell strong { font-size: 12px; color: var(--text-main); }
+    .dlc-subtext { font-size: 10px; color: var(--text-muted); margin-top: 6px; line-height: 1.3; }
+
     .btn-submit {
       width: 100%;
       background: var(--primary);
@@ -274,9 +247,30 @@
       justify-content: center;
       gap: 10px;
     }
-    .btn-action { flex: 1; padding: 8px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-action { flex: 1; padding: 8px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
     .btn-view { background: var(--primary-light); color: var(--primary); }
+    .btn-edit { background: #fef3c7; color: #b45309; }
     .btn-wa { background: #dcfce7; color: #15803d; }
+
+    .bulk-bar {
+      position: sticky;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      background: var(--primary);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      z-index: 40;
+      margin-top: 20px;
+    }
+    .bulk-bar.active { display: flex; }
+    .bulk-bar button { background: white; color: var(--primary); border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
     .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
     .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--surface-border); }
     .admin-table th { background: var(--bg); color: var(--text-muted); font-weight: 600; }
@@ -285,11 +279,14 @@
     .btn-approve-editor { background: #dcfce7; color: #16a34a; }
     .btn-reject { background: #fee2e2; color: #dc2626; }
     .btn-delete-dept { background: #fee2e2; color: #dc2626; }
+
     .upload-zone { border: 2px dashed var(--primary); background: var(--bg); border-radius: var(--radius); padding: 30px 20px; text-align: center; cursor: pointer; margin-bottom: 15px; }
     .preview-tray { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; }
     .thumb-box { position: relative; width: 75px; height: 75px; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
     .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
     .thumb-remove { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; }
+
+    /* Modal Styles */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 15px; }
     .modal.active { display: flex; }
     .modal-content { max-width: 90vw; max-height: 85vh; display: flex; flex-direction: column; align-items: center; position: relative; }
@@ -297,6 +294,7 @@
     .modal-toolbar { display: flex; gap: 10px; margin-top: 12px; background: rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 30px; }
     .tool-btn { background: none; border: none; color: white; font-size: 16px; cursor: pointer; }
     .modal-close { position: absolute; top: -35px; right: 0; color: white; font-size: 24px; background: none; border: none; cursor: pointer; }
+    
     .dept-manage-row { display: flex; gap: 8px; margin-bottom: 12px; }
     .dept-manage-row input { flex: 1; }
     .dept-list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg); border-radius: 8px; margin-bottom: 6px; }
@@ -316,6 +314,7 @@
       </div>
     </div>
   </header>
+
   <div class="container">
     <!-- SCREEN 1: LOGIN -->
     <div id="view-login" class="auth-card">
@@ -332,7 +331,6 @@
     <div id="view-onboarding" class="auth-card" style="display: none;">
       <h2 class="auth-title">Complete Your Profile</h2>
       <p class="auth-desc">Please provide your hospital posting details for account verification.</p>
-     
       <div class="form-group">
         <label>Full Name:</label>
         <input type="text" id="regFullName" placeholder="Dr. Name">
@@ -395,10 +393,9 @@
           
           <div class="filter-chips" id="deptChips">
             <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Dept:</span>
-            <!-- Dynamic chips injected here -->
           </div>
 
-          <!-- Date Filter (Properly placed in HTML) -->
+          <!-- Date Filter -->
           <div class="filter-chips" style="margin-top: 12px; align-items: center;">
             <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Date:</span>
             <div class="chip active" id="dateChipAll" onclick="setDateFilter('ALL', this)">All dates</div>
@@ -413,17 +410,19 @@
             <span id="resultsCount" style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Loading...</span>
             <button class="theme-toggle" onclick="fetchDatabase(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
+
           <div class="results-grid" id="resultsGrid"></div>
+
           <!-- Bulk Share Bar -->
-<div class="bulk-bar" id="bulkBar">
-  <span id="selectedCount">0 selected</span>
-  <div style="display:flex; gap:10px;">
-    <button onclick="clearSelection()">Clear</button>
-    <button onclick="shareSelectedWhatsApp()">
-      <i class="fa-brands fa-whatsapp"></i> Share Selected
-    </button>
-  </div>
-</div>
+          <div class="bulk-bar" id="bulkBar">
+            <span id="selectedCount">0 selected</span>
+            <div style="display:flex; gap:10px;">
+              <button onclick="clearSelection()">Clear</button>
+              <button onclick="shareSelectedWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> Share Selected
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -434,8 +433,8 @@
           <div class="form-group">
             <label>Target Window:</label>
             <select id="uploadWindowType">
-              <option value="Window 1">Window 1 (CBC)</option>
-              <option value="Window 2">Window 2 (LFT/KFT/PT-INR)</option>
+              <option value="Window 1">Window 1 (CBC / Hematology Sheet)</option>
+              <option value="Window 2">Window 2 (LFT / KFT / Markers)</option>
             </select>
           </div>
           <div class="upload-zone" onclick="document.getElementById('fileChooser').click()">
@@ -470,7 +469,6 @@
           </table>
         </div>
 
-        <!-- Department Management -->
         <div class="card" style="margin-top: 20px;">
           <div class="card-title"><i class="fa-solid fa-building"></i> Manage Departments</div>
           <div class="dept-manage-row">
@@ -485,7 +483,7 @@
     </div>
   </div>
 
-  <!-- Lightbox Modal -->
+  <!-- Image Lightbox Modal -->
   <div class="modal" id="imageModal">
     <div class="modal-content">
       <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
@@ -499,6 +497,43 @@
     </div>
   </div>
 
+  <!-- Edit / Correction Modal -->
+  <div class="modal" id="editModal">
+    <div class="modal-content" style="background: var(--surface); padding: 25px; border-radius: var(--radius); width: 95%; max-width: 480px; box-shadow: var(--shadow);">
+      <button class="modal-close" style="top: 10px; right: 15px; color: var(--text-muted);" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button>
+      <h3 style="color: var(--primary); margin-bottom: 15px; align-self: flex-start;">✏️ Correct Patient Record</h3>
+      
+      <input type="hidden" id="editRowIndex">
+      
+      <div class="form-group" style="width: 100%;">
+        <label>Patient Name:</label>
+        <input type="text" id="editName">
+      </div>
+      <div class="form-group" style="width: 100%;">
+        <label>CR Number:</label>
+        <input type="text" id="editCrNo">
+      </div>
+      <div class="form-group" style="width: 100%;">
+        <label>Department:</label>
+        <input type="text" id="editDept">
+      </div>
+
+      <!-- Optional CBC values edit -->
+      <div id="editCbcFields" style="display: none; width: 100%;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px;">CBC Values:</div>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <input type="text" id="editHb" placeholder="Hb (g/dL)" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--surface-border);">
+          <input type="text" id="editTlc" placeholder="TLC (/cu mm)" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--surface-border);">
+          <input type="text" id="editPlt" placeholder="Platelets" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--surface-border);">
+        </div>
+      </div>
+
+      <button class="btn-submit" id="btnSaveEdit" onclick="saveRecordCorrection()">
+        <i class="fa-solid fa-check"></i> Save Correction
+      </button>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = "https://leytpfrbrvrsihowgcwg.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxleXRwZnJicnZyc2lob3dnY3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MDgyMzAsImV4cCI6MjEwMjI4NDIzMH0.rkR4Ndf7eyhwOKcWdPcfVV4dsaIaNpLvIUpFf63_W9E";
@@ -506,14 +541,14 @@
    
     const _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-   let selectedReports = new Map(); // key = unique id, value = report data
+    let selectedReports = new Map();
     let currentUser = null;
     let currentProfile = null;
     let rawRecords = [];
     let selectedFiles = [];
     let activeWindowFilter = "ALL";
     let activeDeptFilter = "ALL";
-    let activeDateFilter = "ALL"; // "ALL" or "YYYY-MM-DD"
+    let activeDateFilter = "ALL";
     let currentZoom = 1;
     let currentRotation = 0;
     let departmentList = [];
@@ -537,14 +572,10 @@
       return url;
     }
 
-    // ========== DEPARTMENT MANAGEMENT ==========
+    // ========== DEPARTMENTS ==========
     async function loadDepartments() {
       try {
-        const { data, error } = await _supabaseClient
-          .from('departments')
-          .select('name')
-          .order('name');
-       
+        const { data, error } = await _supabaseClient.from('departments').select('name').order('name');
         if (error || !data || data.length === 0) {
           departmentList = [...DEFAULT_DEPTS];
         } else {
@@ -561,10 +592,8 @@
     function renderDeptChips() {
       const container = document.getElementById('deptChips');
       if (!container) return;
-     
       let html = `<span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Dept:</span>
                   <div class="chip ${activeDeptFilter === 'ALL' ? 'active' : ''}" onclick="setDeptFilter('ALL', this)">All</div>`;
-     
       departmentList.forEach(dept => {
         html += `<div class="chip ${activeDeptFilter === dept ? 'active' : ''}" onclick="setDeptFilter('${dept}', this)">${dept}</div>`;
       });
@@ -580,18 +609,14 @@
     function renderDeptAdminList() {
       const container = document.getElementById('deptListContainer');
       if (!container) return;
-     
       if (departmentList.length === 0) {
         container.innerHTML = '<p style="color: var(--text-muted);">No departments yet.</p>';
         return;
       }
-     
       container.innerHTML = departmentList.map(dept => `
         <div class="dept-list-item">
           <span>${dept}</span>
-          <button class="btn-table btn-delete-dept" onclick="deleteDepartment('${dept}')">
-            <i class="fa-solid fa-trash"></i> Delete
-          </button>
+          <button class="btn-table btn-delete-dept" onclick="deleteDepartment('${dept}')"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
       `).join('');
     }
@@ -600,9 +625,7 @@
       const input = document.getElementById('newDeptName');
       const name = (input.value || '').trim();
       if (!name) return alert('Enter a department name');
-     
       if (departmentList.includes(name)) return alert('Department already exists');
-     
       try {
         const { error } = await _supabaseClient.from('departments').insert({ name });
         if (error) throw error;
@@ -619,7 +642,6 @@
 
     async function deleteDepartment(name) {
       if (!confirm(`Delete department "${name}"?`)) return;
-     
       try {
         const { error } = await _supabaseClient.from('departments').delete().eq('name', name);
         if (error) throw error;
@@ -636,19 +658,12 @@
     async function checkUserSession() {
       try {
         const { data: { session }, error: sessionError } = await _supabaseClient.auth.getSession();
-       
         if (sessionError || !session) {
           showView('view-login');
           return;
         }
         currentUser = session.user;
-       
-        const { data: profile, error: profileError } = await _supabaseClient
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .maybeSingle();
-         
+        const { data: profile } = await _supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
         if (!profile) {
           await loadDepartments();
           showView('view-onboarding');
@@ -716,7 +731,6 @@
 
     function setupMainApp() {
       showView('view-main');
-     
       const navInfo = document.getElementById('navUserInfo');
       if (navInfo) {
         navInfo.style.display = 'inline';
@@ -755,14 +769,9 @@
         const isSelf = u.id === currentUser.id;
         tbody.innerHTML += `
           <tr>
-            <td>
-              <strong>${u.full_name || 'No Name'}</strong><br>
-              <span style="color: var(--text-muted); font-size: 11px;">${u.email}</span>
-            </td>
+            <td><strong>${u.full_name || 'No Name'}</strong><br><span style="color: var(--text-muted); font-size: 11px;">${u.email}</span></td>
             <td>${u.designation}<br><span style="color: var(--text-muted); font-size: 11px;">${u.department}</span></td>
-            <td>
-              <span class="badge ${u.status === 'approved' ? 'badge-w1' : 'badge-w2'}">${u.status} (${u.role})</span>
-            </td>
+            <td><span class="badge ${u.status === 'approved' ? 'badge-w1' : 'badge-w2'}">${u.status} (${u.role})</span></td>
             <td>
               ${isSelf ? '<span style="color: var(--text-muted); font-size: 11px;">(You)</span>' : `
                 <button class="btn-table btn-approve-viewer" onclick="updateUserRole('${u.id}', 'approved', 'viewer')">Viewer</button>
@@ -784,7 +793,6 @@
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-     
       if (tab === 'search') {
         document.getElementById('tabBtnSearch').classList.add('active');
         document.getElementById('tab-search').classList.add('active');
@@ -803,39 +811,26 @@
       document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
     }
 
-    // ========== DATA FETCH + 5-DAY FILTER ==========
+    // ========== FETCH & FILTER ==========
     async function fetchDatabase(manual = false) {
-  const countLabel = document.getElementById('resultsCount');
-  if (manual) countLabel.innerText = "Syncing from Google Sheet...";
-  
-  try {
-    // Add a cache-buster so browser doesn't use old failed response
-    const response = await fetch(SCRIPT_URL + "?t=" + Date.now(), {
-      method: "GET",
-      redirect: "follow"
-    });
+      const countLabel = document.getElementById('resultsCount');
+      if (manual) countLabel.innerText = "Syncing from Google Sheet...";
+      try {
+        const response = await fetch(SCRIPT_URL + "?t=" + Date.now());
+        const allRecords = await response.json();
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} - Script may need redeployment`);
+        rawRecords = allRecords.filter(r => {
+          const ts = new Date(r.timestamp);
+          return !isNaN(ts.getTime()) && ts >= fiveDaysAgo;
+        });
+
+        applyFilters();
+      } catch (err) {
+        countLabel.innerText = "Failed to load records.";
+      }
     }
-
-    const allRecords = await response.json();
-
-    // Keep only last 5 days
-    const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-
-    rawRecords = allRecords.filter(row => {
-      const ts = new Date(row[0]);
-      return !isNaN(ts.getTime()) && ts >= fiveDaysAgo;
-    });
-
-    applyFilters();
-  } catch (err) {
-    console.error("Fetch error:", err);
-    countLabel.innerText = "Failed to load records. Please redeploy Apps Script (see console).";
-  }
-}
 
     function setWindowFilter(win, el) {
       activeWindowFilter = win;
@@ -851,10 +846,8 @@
       applyFilters();
     }
 
-    // ========== DATE FILTER FUNCTIONS ==========
     function setDateFilter(dateValue, el) {
       activeDateFilter = dateValue;
-      
       document.querySelectorAll('#dateChipAll').forEach(c => c.classList.remove('active'));
       if (dateValue === 'ALL') {
         document.getElementById('dateChipAll').classList.add('active');
@@ -862,7 +855,6 @@
       } else {
         document.getElementById('dateChipAll').classList.remove('active');
       }
-      
       applyFilters();
     }
 
@@ -871,112 +863,248 @@
     }
 
     function applyFilters() {
-  const query = document.getElementById('liveSearchInput').value.toLowerCase().trim();
-  const grid = document.getElementById('resultsGrid');
-  const countLabel = document.getElementById('resultsCount');
+      const query = document.getElementById('liveSearchInput').value.toLowerCase().trim();
+      const grid = document.getElementById('resultsGrid');
+      const countLabel = document.getElementById('resultsCount');
 
-  const filtered = rawRecords.filter(row => {
-    const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
+      const filtered = rawRecords.filter(r => {
+        const matchQuery = !query ||
+          (r.name || '').toLowerCase().includes(query) ||
+          (r.crNo || '').toString().toLowerCase().includes(query) ||
+          (r.dept || '').toLowerCase().includes(query);
 
-    const matchQuery = !query ||
-      (name || '').toString().toLowerCase().includes(query) ||
-      (crNo || '').toString().toLowerCase().includes(query) ||
-      (dept || '').toString().toLowerCase().includes(query);
+        const matchWindow = (activeWindowFilter === 'ALL') || (r.windowType === activeWindowFilter);
+        const matchDept = (activeDeptFilter === 'ALL') || (r.dept || '').toLowerCase().includes(activeDeptFilter.toLowerCase());
 
-    const matchWindow = (activeWindowFilter === 'ALL') || (windowType === activeWindowFilter);
+        let matchDate = true;
+        if (activeDateFilter !== 'ALL') {
+          try {
+            const d = new Date(r.timestamp);
+            const recordDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            matchDate = (recordDate === activeDateFilter);
+          } catch (e) {
+            matchDate = false;
+          }
+        }
+        return matchQuery && matchWindow && matchDept && matchDate;
+      });
 
-    const matchDept = (activeDeptFilter === 'ALL') ||
-      (dept || '').toString().toLowerCase().includes(activeDeptFilter.toLowerCase());
+      countLabel.innerText = `Showing ${filtered.length} report(s) (last 5 days)`;
+      grid.innerHTML = "";
 
-    let matchDate = true;
-    if (activeDateFilter !== 'ALL') {
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No reports found.</div>`;
+        updateBulkBar();
+        return;
+      }
+
+      const isEditorOrAdmin = currentProfile && (currentProfile.role === 'admin' || currentProfile.role === 'editor');
+
+      filtered.reverse().forEach(r => {
+        const badgeClass = r.windowType === 'Window 1' ? 'badge-w1' : 'badge-w2';
+        const directUrl = getDirectImageUrl(r.imgUrl);
+        const uniqueId = `${r.rowIndex}_${r.crNo}`.replace(/\s+/g, '_');
+        const isSelected = selectedReports.has(uniqueId);
+
+        let dateStr = '';
+        try {
+          const d = new Date(r.timestamp);
+          dateStr = d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch(e) { dateStr = r.timestamp; }
+
+        // Parse Window 1 lab values if present
+        let labHtml = '';
+        if (r.windowType === 'Window 1' && r.labData) {
+          try {
+            const parsed = typeof r.labData === 'string' ? JSON.parse(r.labData) : r.labData;
+            if (parsed && (parsed.hb || parsed.tlc || parsed.platelets)) {
+              labHtml = `
+                <div class="lab-box">
+                  <div class="lab-title"><i class="fa-solid fa-droplet"></i> Extracted Hematology (CBC)</div>
+                  <div class="lab-grid">
+                    <div class="lab-cell"><span>Hb</span><strong>${parsed.hb || '—'}</strong></div>
+                    <div class="lab-cell"><span>TLC</span><strong>${parsed.tlc || '—'}</strong></div>
+                    <div class="lab-cell"><span>PLT</span><strong>${parsed.platelets || '—'}</strong></div>
+                  </div>
+                  ${parsed.dlc ? `
+                    <div class="dlc-subtext">
+                      <strong>DLC:</strong> 
+                      ${parsed.dlc.neutrophils ? `N:${parsed.dlc.neutrophils}% ` : ''}
+                      ${parsed.dlc.lymphocytes ? `L:${parsed.dlc.lymphocytes}% ` : ''}
+                      ${parsed.dlc.monocytes ? `M:${parsed.dlc.monocytes}% ` : ''}
+                      ${parsed.dlc.eosinophils ? `E:${parsed.dlc.eosinophils}%` : ''}
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }
+          } catch(e) {}
+        }
+
+        const card = document.createElement('div');
+        card.className = 'result-card' + (isSelected ? ' selected' : '');
+        card.dataset.id = uniqueId;
+
+        card.innerHTML = `
+          <input type="checkbox" class="card-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect('${uniqueId}', this.checked, this)">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 26px;">
+              <strong>${r.name || 'Unknown Patient'}</strong>
+              <span class="badge ${badgeClass}">${r.windowType}</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; padding-left: 26px;">
+              CR: <span style="color:var(--text-main); font-weight:600;">${r.crNo || 'N/A'}</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted); padding-left: 26px;">
+              Dept: <span style="color:var(--text-main); font-weight:600;">${r.dept || 'N/A'}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; padding-left: 26px;">
+              <i class="fa-regular fa-clock"></i> ${dateStr}
+            </div>
+            ${labHtml}
+          </div>
+          <img src="${directUrl}" class="img-preview" onclick="openModal('${directUrl}')" onerror="this.src='https://via.placeholder.com/300x140?text=Image+Not+Available'; this.style.objectFit='contain';" loading="lazy">
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-action btn-view" onclick="openModal('${directUrl}')"><i class="fa-solid fa-expand"></i> View</button>
+            ${isEditorOrAdmin ? `<button class="btn-action btn-edit" onclick="openEditModal(${r.rowIndex})"><i class="fa-solid fa-pen"></i> Edit</button>` : ''}
+            <button class="btn-action btn-wa" onclick="shareWhatsApp('${(r.name||'').replace(/'/g,"\\'")}', '${r.crNo}', '${r.dept}', '${r.imgUrl}')"><i class="fa-brands fa-whatsapp"></i> Share</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      updateBulkBar();
+    }
+
+    // ========== EDIT / CORRECTION TOOL ==========
+    function openEditModal(rowIndex) {
+      const record = rawRecords.find(r => r.rowIndex === rowIndex);
+      if (!record) return;
+
+      document.getElementById('editRowIndex').value = rowIndex;
+      document.getElementById('editName').value = record.name || '';
+      document.getElementById('editCrNo').value = record.crNo || '';
+      document.getElementById('editDept').value = record.dept || '';
+
+      const cbcSection = document.getElementById('editCbcFields');
+      if (record.windowType === 'Window 1') {
+        cbcSection.style.display = 'block';
+        let parsed = {};
+        try { parsed = typeof record.labData === 'string' ? JSON.parse(record.labData) : (record.labData || {}); } catch(e){}
+        document.getElementById('editHb').value = parsed.hb || '';
+        document.getElementById('editTlc').value = parsed.tlc || '';
+        document.getElementById('editPlt').value = parsed.platelets || '';
+      } else {
+        cbcSection.style.display = 'none';
+      }
+
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('active');
+    }
+
+    async function saveRecordCorrection() {
+      const rowIndex = parseInt(document.getElementById('editRowIndex').value);
+      const name = document.getElementById('editName').value.trim();
+      const cr_no = document.getElementById('editCrNo').value.trim();
+      const dept = document.getElementById('editDept').value.trim();
+      const btn = document.getElementById('btnSaveEdit');
+
+      const record = rawRecords.find(r => r.rowIndex === rowIndex);
+      let lab_data = null;
+
+      if (record && record.windowType === 'Window 1') {
+        let existingLab = {};
+        try { existingLab = typeof record.labData === 'string' ? JSON.parse(record.labData) : (record.labData || {}); } catch(e){}
+        lab_data = {
+          ...existingLab,
+          hb: document.getElementById('editHb').value.trim() || null,
+          tlc: document.getElementById('editTlc').value.trim() || null,
+          platelets: document.getElementById('editPlt').value.trim() || null
+        };
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+
       try {
-        const d = new Date(timestamp);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const recordDate = `${yyyy}-${mm}-${dd}`;
-        matchDate = (recordDate === activeDateFilter);
-      } catch (e) {
-        matchDate = false;
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "edit",
+            rowIndex: rowIndex,
+            name: name,
+            cr_no: cr_no,
+            dept: dept,
+            lab_data: lab_data
+          })
+        });
+
+        const res = await response.json();
+        if (res.status === 'success') {
+          closeEditModal();
+          await fetchDatabase(true);
+        } else {
+          alert("Update failed: " + res.message);
+        }
+      } catch (err) {
+        alert("Error saving correction: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> Save Correction`;
       }
     }
 
-    return matchQuery && matchWindow && matchDept && matchDate;
-  });
+    // ========== SELECTION & BULK SHARE ==========
+    function toggleSelect(id, isChecked, checkbox) {
+      const card = checkbox.closest('.result-card');
+      if (isChecked) {
+        const row = rawRecords.find(r => `${r.rowIndex}_${r.crNo}`.replace(/\s+/g, '_') === id);
+        if (row) {
+          selectedReports.set(id, { name: row.name, crNo: row.crNo, dept: row.dept, imgUrl: row.imgUrl, windowType: row.windowType });
+          card.classList.add('selected');
+        }
+      } else {
+        selectedReports.delete(id);
+        card.classList.remove('selected');
+      }
+      updateBulkBar();
+    }
 
-  countLabel.innerText = `Showing ${filtered.length} report(s) (last 5 days)`;
-  grid.innerHTML = "";
+    function updateBulkBar() {
+      const bar = document.getElementById('bulkBar');
+      const countEl = document.getElementById('selectedCount');
+      countEl.innerText = `${selectedReports.size} selected`;
+      bar.classList.toggle('active', selectedReports.size > 0);
+    }
 
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No reports found in the last 5 days.</div>`;
-    updateBulkBar();
-    return;
-  }
+    function clearSelection() {
+      selectedReports.clear();
+      document.querySelectorAll('.card-checkbox').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+      updateBulkBar();
+    }
 
-  // Newest first
-  filtered.reverse().forEach((row, index) => {
-    const [timestamp, windowType, name, crNo, dept, imgUrl] = row;
-    const badgeClass = windowType === 'Window 1' ? 'badge-w1' : 'badge-w2';
-    const directUrl = getDirectImageUrl(imgUrl);
-
-    // Unique key for selection
-    const uniqueId = `${timestamp}_${crNo}_${name}`.replace(/\s+/g, '_');
-
-    let dateStr = '';
-    try {
-      const d = new Date(timestamp);
-      dateStr = d.toLocaleString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
+    function shareSelectedWhatsApp() {
+      if (selectedReports.size === 0) return;
+      let message = `*LNJP Hospital – Lab Reports (${selectedReports.size})*\n\n`;
+      let i = 1;
+      selectedReports.forEach(r => {
+        message += `*${i}. ${r.name || 'Unknown'}*\n🔢 CR: ${r.crNo || 'N/A'}\n🏥 Dept: ${r.dept || 'N/A'}\n🪟 ${r.windowType}\n📄 ${r.imgUrl}\n\n`;
+        i++;
       });
-    } catch(e) { dateStr = timestamp; }
+      message += `_Shared from LNJP LabHub_`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+    }
 
-    const isSelected = selectedReports.has(uniqueId);
+    function shareWhatsApp(name, crNo, dept, imgUrl) {
+      const text = encodeURIComponent(`*LNJP Hospital Lab Report*\n👤 *Patient:* ${name}\n🔢 *CR No:* ${crNo}\n🏥 *Dept:* ${dept}\n📄 *View Sheet:* ${imgUrl}`);
+      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
 
-    const card = document.createElement('div');
-    card.className = 'result-card' + (isSelected ? ' selected' : '');
-    card.dataset.id = uniqueId;
-
-    card.innerHTML = `
-      <input type="checkbox" class="card-checkbox" 
-             ${isSelected ? 'checked' : ''} 
-             onchange="toggleSelect('${uniqueId}', this.checked, this)">
-      
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 26px;">
-          <strong>${name || 'Unknown Patient'}</strong>
-          <span class="badge ${badgeClass}">${windowType}</span>
-        </div>
-        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; padding-left: 26px;">
-          CR: <span style="color:var(--text-main); font-weight:600;">${crNo || 'N/A'}</span>
-        </div>
-        <div style="font-size: 13px; color: var(--text-muted); padding-left: 26px;">
-          Dept: <span style="color:var(--text-main); font-weight:600;">${dept || 'N/A'}</span>
-        </div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; padding-left: 26px;">
-          <i class="fa-regular fa-clock"></i> ${dateStr}
-        </div>
-      </div>
-      <img src="${directUrl}" class="img-preview"
-           onclick="openModal('${directUrl}')"
-           onerror="this.src='https://via.placeholder.com/300x140?text=Image+Not+Available'; this.style.objectFit='contain';"
-           loading="lazy">
-      <div style="display: flex; gap: 8px;">
-        <button class="btn-action btn-view" onclick="openModal('${directUrl}')">
-          <i class="fa-solid fa-expand"></i> View
-        </button>
-        <button class="btn-action btn-wa" onclick="shareWhatsApp('${(name||'').replace(/'/g,"\\'")}', '${crNo}', '${dept}', '${imgUrl}')">
-          <i class="fa-brands fa-whatsapp"></i> Share
-        </button>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-
-  updateBulkBar();
-}
-
+    // ========== LIGHTBOX MODAL ==========
     function openModal(url) {
       const modal = document.getElementById('imageModal');
       document.getElementById('modalImage').src = url;
@@ -989,16 +1117,9 @@
     function closeModal() { document.getElementById('imageModal').classList.remove('active'); }
     function zoomImage(factor) { currentZoom = Math.max(0.5, Math.min(currentZoom + factor, 4)); updateTransform(); }
     function rotateImage() { currentRotation = (currentRotation + 90) % 360; updateTransform(); }
-    function updateTransform() { 
-      document.getElementById('modalImage').style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`; 
-    }
+    function updateTransform() { document.getElementById('modalImage').style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`; }
 
-    function shareWhatsApp(name, crNo, dept, imgUrl) {
-      const text = encodeURIComponent(`*LNJP Hospital Lab Report*\n👤 *Patient:* ${name}\n🔢 *CR No:* ${crNo}\n🏥 *Dept:* ${dept}\n📄 *View Sheet:* ${imgUrl}`);
-      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-    }
-
-    // ========== UPLOAD ==========
+    // ========== UPLOAD PIPELINE ==========
     function compressImage(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -1047,12 +1168,12 @@
       btn.disabled = true;
       let successCount = 0;
       for (let i = 0; i < selectedFiles.length; i++) {
-        statusText.innerText = `Processing photo ${i + 1} of ${selectedFiles.length}...`;
+        statusText.innerText = `Processing sheet ${i + 1} of ${selectedFiles.length} with AI...`;
         try {
           const base64Data = await compressImage(selectedFiles[i]);
           const response = await fetch(SCRIPT_URL, {
             method: "POST",
-            body: JSON.stringify({ image: base64Data, window: windowType })
+            body: JSON.stringify({ image: base64Data, window: windowType, action: "upload" })
           });
           const data = await response.json();
           if (data.status === "success") successCount++;
@@ -1066,73 +1187,6 @@
       btn.disabled = false;
       fetchDatabase();
     }
-    function toggleSelect(id, isChecked, checkbox) {
-  const card = checkbox.closest('.result-card');
-  
-  if (isChecked) {
-    // Find the original row data
-    const row = rawRecords.find(r => {
-      const key = `${r[0]}_${r[3]}_${r[2]}`.replace(/\s+/g, '_');
-      return key === id;
-    });
-    if (row) {
-      selectedReports.set(id, {
-        name: row[2],
-        crNo: row[3],
-        dept: row[4],
-        imgUrl: row[5],
-        windowType: row[1]
-      });
-      card.classList.add('selected');
-    }
-  } else {
-    selectedReports.delete(id);
-    card.classList.remove('selected');
-  }
-  updateBulkBar();
-}
-
-function updateBulkBar() {
-  const bar = document.getElementById('bulkBar');
-  const countEl = document.getElementById('selectedCount');
-  const count = selectedReports.size;
-  
-  countEl.innerText = `${count} selected`;
-  
-  if (count > 0) {
-    bar.classList.add('active');
-  } else {
-    bar.classList.remove('active');
-  }
-}
-
-function clearSelection() {
-  selectedReports.clear();
-  document.querySelectorAll('.card-checkbox').forEach(cb => cb.checked = false);
-  document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
-  updateBulkBar();
-}
-
-function shareSelectedWhatsApp() {
-  if (selectedReports.size === 0) return;
-
-  let message = `*LNJP Hospital – Lab Reports (${selectedReports.size})*\n\n`;
-
-  let i = 1;
-  selectedReports.forEach((report) => {
-    message += `*${i}. ${report.name || 'Unknown'}*\n`;
-    message += `🔢 CR: ${report.crNo || 'N/A'}\n`;
-    message += `🏥 Dept: ${report.dept || 'N/A'}\n`;
-    message += `🪟 ${report.windowType}\n`;
-    message += `📄 ${report.imgUrl}\n\n`;
-    i++;
-  });
-
-  message += `_Shared from LNJP LabHub_`;
-
-  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-  window.open(url, '_blank');
-}
   </script>
 </body>
 </html>
