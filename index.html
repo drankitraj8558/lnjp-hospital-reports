@@ -250,6 +250,7 @@
     .btn-action { flex: 1; padding: 8px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
     .btn-view { background: var(--primary-light); color: var(--primary); }
     .btn-edit { background: #fef3c7; color: #b45309; }
+    .btn-del { background: #fee2e2; color: #dc2626; }
     .btn-wa { background: #dcfce7; color: #15803d; }
 
     .bulk-bar {
@@ -907,6 +908,7 @@
         return;
       }
 
+      const isAdmin = currentProfile && currentProfile.role === 'admin';
       const isEditorOrAdmin = currentProfile && (currentProfile.role === 'admin' || currentProfile.role === 'editor');
 
       [...filtered].reverse().forEach(r => {
@@ -975,6 +977,7 @@
           <div style="display: flex; gap: 6px;">
             <button class="btn-action btn-view" onclick="openModal('${directUrl}')"><i class="fa-solid fa-expand"></i> View</button>
             ${isEditorOrAdmin ? `<button class="btn-action btn-edit" onclick="openEditModal(${r.rowIndex})"><i class="fa-solid fa-pen"></i> Edit</button>` : ''}
+            ${isAdmin ? `<button class="btn-action btn-del" onclick="deleteEntry(${r.rowIndex}, '${String(r.name || '').replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>` : ''}
             <button class="btn-action btn-wa" onclick="shareWhatsApp('${String(r.name||'').replace(/'/g,"\\'")}', '${r.crNo}', '${r.dept}', '${r.imgUrl}')"><i class="fa-brands fa-whatsapp"></i> Share</button>
           </div>
         `;
@@ -984,6 +987,7 @@
       updateBulkBar();
     }
 
+    // ========== EDIT / CORRECTION TOOL ==========
     function openEditModal(rowIndex) {
       const record = rawRecords.find(r => r.rowIndex === rowIndex);
       if (!record) return;
@@ -1064,6 +1068,33 @@
       }
     }
 
+    // ========== ADMIN DELETE ENTRY ==========
+    async function deleteEntry(rowIndex, patientName) {
+      if (!confirm(`Are you sure you want to permanently delete the entry for "${patientName || 'this patient'}"?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "delete",
+            rowIndex: rowIndex
+          })
+        });
+
+        const res = await response.json();
+        if (res.status === 'success') {
+          await fetchDatabase(true);
+        } else {
+          alert("Delete failed: " + res.message);
+        }
+      } catch (err) {
+        alert("Error deleting entry: " + err.message);
+      }
+    }
+
+    // ========== SELECTION & BULK SHARE ==========
     function toggleSelect(id, isChecked, checkbox) {
       const card = checkbox.closest('.result-card');
       if (isChecked) {
@@ -1110,6 +1141,7 @@
       window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     }
 
+    // ========== LIGHTBOX MODAL ==========
     function openModal(url) {
       const modal = document.getElementById('imageModal');
       document.getElementById('modalImage').src = url;
@@ -1124,6 +1156,7 @@
     function rotateImage() { currentRotation = (currentRotation + 90) % 360; updateTransform(); }
     function updateTransform() { document.getElementById('modalImage').style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`; }
 
+    // ========== UPLOAD PIPELINE ==========
     function compressImage(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
