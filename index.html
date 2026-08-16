@@ -192,6 +192,7 @@
       border: 1px solid var(--surface-border);
       color: var(--text-muted);
       cursor: pointer;
+      user-select: none;
     }
     .chip.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
 
@@ -216,7 +217,6 @@
     .badge-w2 { background: #fef3c7; color: #92400e; }
     .img-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid var(--surface-border); cursor: pointer; background: var(--bg); }
     
-    /* Lab Values Box */
     .lab-box {
       background: var(--bg);
       border: 1px solid var(--surface-border);
@@ -286,7 +286,6 @@
     .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
     .thumb-remove { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; }
 
-    /* Modal Styles */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 15px; }
     .modal.active { display: flex; }
     .modal-content { max-width: 90vw; max-height: 85vh; display: flex; flex-direction: column; align-items: center; position: relative; }
@@ -382,7 +381,7 @@
       <!-- TAB 1: Search -->
       <div id="tab-search" class="panel active">
         <div class="card">
-          <input type="text" id="liveSearchInput" class="search-input" placeholder="Search by Patient Name, CR No., or Dept..." oninput="applyFilters()">
+          <input type="text" id="liveSearchInput" class="search-input" placeholder="Type Patient Name, CR No., or Dept to filter instantly..." oninput="applyFilters()">
          
           <div class="filter-chips" id="windowChips">
             <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Window:</span>
@@ -407,7 +406,7 @@
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-            <span id="resultsCount" style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Loading...</span>
+            <span id="resultsCount" style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Loading records...</span>
             <button class="theme-toggle" onclick="fetchDatabase(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
 
@@ -518,12 +517,11 @@
         <input type="text" id="editDept">
       </div>
 
-      <!-- Optional CBC values edit -->
       <div id="editCbcFields" style="display: none; width: 100%;">
         <div style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px;">CBC Values:</div>
         <div style="display: flex; gap: 8px; margin-bottom: 10px;">
           <input type="text" id="editHb" placeholder="Hb (g/dL)" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--surface-border);">
-          <input type="text" id="editTlc" placeholder="TLC (/cu mm)" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--surface-border);">
+          <input type="text" id="editTlc" placeholder="TLC" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--surface-border);">
           <input type="text" id="editPlt" placeholder="Platelets" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--surface-border);">
         </div>
       </div>
@@ -562,7 +560,6 @@
       checkUserSession();
     });
 
-    // ========== IMAGE HELPER ==========
     function getDirectImageUrl(url) {
       if (!url) return '';
       const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
@@ -572,7 +569,6 @@
       return url;
     }
 
-    // ========== DEPARTMENTS ==========
     async function loadDepartments() {
       try {
         const { data, error } = await _supabaseClient.from('departments').select('name').order('name');
@@ -654,7 +650,6 @@
       }
     }
 
-    // ========== AUTH & SESSION ==========
     async function checkUserSession() {
       try {
         const { data: { session }, error: sessionError } = await _supabaseClient.auth.getSession();
@@ -811,24 +806,31 @@
       document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
     }
 
-    // ========== FETCH & FILTER ==========
     async function fetchDatabase(manual = false) {
       const countLabel = document.getElementById('resultsCount');
       if (manual) countLabel.innerText = "Syncing from Google Sheet...";
       try {
-        const response = await fetch(SCRIPT_URL + "?t=" + Date.now());
-        const allRecords = await response.json();
-        const fiveDaysAgo = new Date();
-        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          const fiveDaysAgo = new Date();
+          fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+          fiveDaysAgo.setHours(0, 0, 0, 0);
 
-        rawRecords = allRecords.filter(r => {
-          const ts = new Date(r.timestamp);
-          return !isNaN(ts.getTime()) && ts >= fiveDaysAgo;
-        });
+          rawRecords = data.filter(r => {
+            if (!r.timestamp) return true;
+            const ts = new Date(r.timestamp);
+            return isNaN(ts.getTime()) || ts >= fiveDaysAgo;
+          });
+        } else {
+          rawRecords = [];
+        }
 
         applyFilters();
       } catch (err) {
-        countLabel.innerText = "Failed to load records.";
+        console.error("Fetch error:", err);
+        countLabel.innerText = "Error syncing. Check Google Sheet.";
       }
     }
 
@@ -842,7 +844,7 @@
     function setDeptFilter(dept, el) {
       activeDeptFilter = dept;
       document.querySelectorAll('#deptChips .chip').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
+      if (el) el.classList.add('active');
       applyFilters();
     }
 
@@ -863,25 +865,32 @@
     }
 
     function applyFilters() {
-      const query = document.getElementById('liveSearchInput').value.toLowerCase().trim();
+      const query = (document.getElementById('liveSearchInput').value || '').toLowerCase().trim();
       const grid = document.getElementById('resultsGrid');
       const countLabel = document.getElementById('resultsCount');
 
       const filtered = rawRecords.filter(r => {
-        const matchQuery = !query ||
-          (r.name || '').toLowerCase().includes(query) ||
-          (r.crNo || '').toString().toLowerCase().includes(query) ||
-          (r.dept || '').toLowerCase().includes(query);
+        const nameMatch = (r.name || '').toLowerCase().includes(query);
+        const crMatch = (r.crNo || '').toString().toLowerCase().includes(query);
+        const deptFieldMatch = (r.dept || '').toLowerCase().includes(query);
+        const matchQuery = !query || nameMatch || crMatch || deptFieldMatch;
 
         const matchWindow = (activeWindowFilter === 'ALL') || (r.windowType === activeWindowFilter);
-        const matchDept = (activeDeptFilter === 'ALL') || (r.dept || '').toLowerCase().includes(activeDeptFilter.toLowerCase());
+        
+        let matchDept = true;
+        if (activeDeptFilter !== 'ALL') {
+          matchDept = (r.dept || '').toLowerCase().trim() === activeDeptFilter.toLowerCase().trim() ||
+                      (r.dept || '').toLowerCase().includes(activeDeptFilter.toLowerCase());
+        }
 
         let matchDate = true;
-        if (activeDateFilter !== 'ALL') {
+        if (activeDateFilter !== 'ALL' && r.timestamp) {
           try {
             const d = new Date(r.timestamp);
-            const recordDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            matchDate = (recordDate === activeDateFilter);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            matchDate = (`${yyyy}-${mm}-${dd}` === activeDateFilter);
           } catch (e) {
             matchDate = false;
           }
@@ -893,14 +902,15 @@
       grid.innerHTML = "";
 
       if (filtered.length === 0) {
-        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No reports found.</div>`;
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No matching reports found.</div>`;
         updateBulkBar();
         return;
       }
 
       const isEditorOrAdmin = currentProfile && (currentProfile.role === 'admin' || currentProfile.role === 'editor');
 
-      filtered.reverse().forEach(r => {
+      // Create a copy before reversing to keep rawRecords intact
+      [...filtered].reverse().forEach(r => {
         const badgeClass = r.windowType === 'Window 1' ? 'badge-w1' : 'badge-w2';
         const directUrl = getDirectImageUrl(r.imgUrl);
         const uniqueId = `${r.rowIndex}_${r.crNo}`.replace(/\s+/g, '_');
@@ -912,7 +922,6 @@
           dateStr = d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         } catch(e) { dateStr = r.timestamp; }
 
-        // Parse Window 1 lab values if present
         let labHtml = '';
         if (r.windowType === 'Window 1' && r.labData) {
           try {
@@ -922,9 +931,9 @@
                 <div class="lab-box">
                   <div class="lab-title"><i class="fa-solid fa-droplet"></i> Extracted Hematology (CBC)</div>
                   <div class="lab-grid">
-                    <div class="lab-cell"><span>Hb</span><strong>${parsed.hb || '—'}</strong></div>
-                    <div class="lab-cell"><span>TLC</span><strong>${parsed.tlc || '—'}</strong></div>
-                    <div class="lab-cell"><span>PLT</span><strong>${parsed.platelets || '—'}</strong></div>
+                    <div class="lab-cell"><span>Hb (g/dL)</span><strong>${parsed.hb || '—'}</strong></div>
+                    <div class="lab-cell"><span>TLC (/cu mm)</span><strong>${parsed.tlc || '—'}</strong></div>
+                    <div class="lab-cell"><span>PLT (k/uL)</span><strong>${parsed.platelets || '—'}</strong></div>
                   </div>
                   ${parsed.dlc ? `
                     <div class="dlc-subtext">
@@ -976,7 +985,6 @@
       updateBulkBar();
     }
 
-    // ========== EDIT / CORRECTION TOOL ==========
     function openEditModal(rowIndex) {
       const record = rawRecords.find(r => r.rowIndex === rowIndex);
       if (!record) return;
@@ -1057,7 +1065,6 @@
       }
     }
 
-    // ========== SELECTION & BULK SHARE ==========
     function toggleSelect(id, isChecked, checkbox) {
       const card = checkbox.closest('.result-card');
       if (isChecked) {
@@ -1104,7 +1111,6 @@
       window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     }
 
-    // ========== LIGHTBOX MODAL ==========
     function openModal(url) {
       const modal = document.getElementById('imageModal');
       document.getElementById('modalImage').src = url;
@@ -1119,7 +1125,6 @@
     function rotateImage() { currentRotation = (currentRotation + 90) % 360; updateTransform(); }
     function updateTransform() { document.getElementById('modalImage').style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`; }
 
-    // ========== UPLOAD PIPELINE ==========
     function compressImage(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
