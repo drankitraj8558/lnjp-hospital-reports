@@ -253,24 +253,40 @@
     .btn-del { background: #fee2e2; color: #dc2626; }
     .btn-wa { background: #dcfce7; color: #15803d; }
 
+    /* Enhanced Bulk Action Bar */
     .bulk-bar {
       position: sticky;
       bottom: 20px;
       left: 0;
       right: 0;
-      background: var(--primary);
-      color: white;
+      background: var(--surface);
+      border: 1px solid var(--primary);
+      color: var(--text-main);
       padding: 12px 20px;
       border-radius: 12px;
       display: none;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
       z-index: 40;
       margin-top: 20px;
     }
     .bulk-bar.active { display: flex; }
-    .bulk-bar button { background: white; color: var(--primary); border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .bulk-actions-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn-bulk {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-bulk-clear { background: var(--bg); color: var(--text-muted); border: 1px solid var(--surface-border); }
+    .btn-bulk-share { background: #dcfce7; color: #15803d; }
+    .btn-bulk-delete { background: #fee2e2; color: #dc2626; }
 
     .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
     .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--surface-border); }
@@ -406,20 +422,30 @@
             <button class="chip" onclick="clearDateFilter()" style="margin-left: 4px;">Clear</button>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-            <span id="resultsCount" style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Loading records...</span>
+          <!-- Header Info & Select All Control -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)" style="width: 16px; height: 16px;">
+                Select All
+              </label>
+              <span id="resultsCount" style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Loading records...</span>
+            </div>
             <button class="theme-toggle" onclick="fetchDatabase(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
           </div>
 
           <div class="results-grid" id="resultsGrid"></div>
 
-          <!-- Bulk Share Bar -->
+          <!-- Sticky Bulk Action Bar -->
           <div class="bulk-bar" id="bulkBar">
-            <span id="selectedCount">0 selected</span>
-            <div style="display:flex; gap:10px;">
-              <button onclick="clearSelection()">Clear</button>
-              <button onclick="shareSelectedWhatsApp()">
-                <i class="fa-brands fa-whatsapp"></i> Share Selected
+            <strong id="selectedCount" style="font-size: 14px; color: var(--primary);">0 selected</strong>
+            <div class="bulk-actions-group">
+              <button class="btn-bulk btn-bulk-clear" onclick="clearSelection()">Clear</button>
+              <button class="btn-bulk btn-bulk-share" onclick="shareSelectedWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> Share
+              </button>
+              <button class="btn-bulk btn-bulk-delete" id="btnBulkDelete" style="display: none;" onclick="deleteSelectedRecords()">
+                <i class="fa-solid fa-trash"></i> Delete Selected
               </button>
             </div>
           </div>
@@ -541,6 +567,7 @@
     const _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     let selectedReports = new Map();
+    let currentlyFilteredRecords = [];
     let currentUser = null;
     let currentProfile = null;
     let rawRecords = [];
@@ -899,6 +926,7 @@
         return matchQuery && matchWindow && matchDept && matchDate;
       });
 
+      currentlyFilteredRecords = [...filtered];
       countLabel.innerText = `Showing ${filtered.length} report(s) (last 5 days)`;
       grid.innerHTML = "";
 
@@ -987,7 +1015,6 @@
       updateBulkBar();
     }
 
-    // ========== EDIT / CORRECTION TOOL ==========
     function openEditModal(rowIndex) {
       const record = rawRecords.find(r => r.rowIndex === rowIndex);
       if (!record) return;
@@ -1068,7 +1095,7 @@
       }
     }
 
-    // ========== ADMIN DELETE ENTRY ==========
+    // ========== SINGLE RECORD DELETE ==========
     async function deleteEntry(rowIndex, patientName) {
       if (!confirm(`Are you sure you want to permanently delete the entry for "${patientName || 'this patient'}"?`)) {
         return;
@@ -1094,34 +1121,101 @@
       }
     }
 
-    // ========== SELECTION & BULK SHARE ==========
+    // ========== BULK SELECTION & ACTIONS ==========
     function toggleSelect(id, isChecked, checkbox) {
-      const card = checkbox.closest('.result-card');
+      const card = checkbox ? checkbox.closest('.result-card') : document.querySelector(`.result-card[data-id="${id}"]`);
       if (isChecked) {
         const row = rawRecords.find(r => `${r.rowIndex}_${r.crNo}`.replace(/\s+/g, '_') === id);
         if (row) {
-          selectedReports.set(id, { name: row.name, crNo: row.crNo, dept: row.dept, imgUrl: row.imgUrl, windowType: row.windowType });
-          card.classList.add('selected');
+          selectedReports.set(id, { 
+            rowIndex: row.rowIndex,
+            name: row.name, 
+            crNo: row.crNo, 
+            dept: row.dept, 
+            imgUrl: row.imgUrl, 
+            windowType: row.windowType 
+          });
+          if (card) card.classList.add('selected');
         }
       } else {
         selectedReports.delete(id);
-        card.classList.remove('selected');
+        if (card) card.classList.remove('selected');
       }
       updateBulkBar();
+    }
+
+    function toggleSelectAll(isChecked) {
+      currentlyFilteredRecords.forEach(r => {
+        const uniqueId = `${r.rowIndex}_${r.crNo}`.replace(/\s+/g, '_');
+        toggleSelect(uniqueId, isChecked, null);
+      });
+      document.querySelectorAll('.card-checkbox').forEach(cb => cb.checked = isChecked);
     }
 
     function updateBulkBar() {
       const bar = document.getElementById('bulkBar');
       const countEl = document.getElementById('selectedCount');
-      countEl.innerText = `${selectedReports.size} selected`;
-      bar.classList.toggle('active', selectedReports.size > 0);
+      const delBtn = document.getElementById('btnBulkDelete');
+      const count = selectedReports.size;
+
+      countEl.innerText = `${count} selected`;
+      bar.classList.toggle('active', count > 0);
+
+      // Show Bulk Delete only for Admin
+      const isAdmin = currentProfile && currentProfile.role === 'admin';
+      if (delBtn) delBtn.style.display = (isAdmin && count > 0) ? 'flex' : 'none';
+
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) {
+        selectAllCb.checked = (count > 0 && count === currentlyFilteredRecords.length);
+      }
     }
 
     function clearSelection() {
       selectedReports.clear();
       document.querySelectorAll('.card-checkbox').forEach(cb => cb.checked = false);
       document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) selectAllCb.checked = false;
       updateBulkBar();
+    }
+
+    async function deleteSelectedRecords() {
+      if (selectedReports.size === 0) return;
+      
+      const count = selectedReports.size;
+      if (!confirm(`Are you sure you want to permanently delete ALL ${count} selected records from Google Sheets?`)) {
+        return;
+      }
+
+      const rowIndices = Array.from(selectedReports.values()).map(r => r.rowIndex);
+      const delBtn = document.getElementById('btnBulkDelete');
+      
+      delBtn.disabled = true;
+      delBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deleting...`;
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "bulk_delete",
+            rowIndices: rowIndices
+          })
+        });
+
+        const res = await response.json();
+        if (res.status === 'success') {
+          clearSelection();
+          await fetchDatabase(true);
+        } else {
+          alert("Bulk delete failed: " + res.message);
+        }
+      } catch (err) {
+        alert("Error deleting entries: " + err.message);
+      } finally {
+        delBtn.disabled = false;
+        delBtn.innerHTML = `<i class="fa-solid fa-trash"></i> Delete Selected`;
+      }
     }
 
     function shareSelectedWhatsApp() {
